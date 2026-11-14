@@ -83,7 +83,7 @@ the phrase (`said`) and the resolved meaning.
 | `I_sunn` | "sunn", "jhunjhuni", "jhin jhin", "obosh" | pins and needles, or stroke | "Is it on one side only? Did it start suddenly? Any change in the face or speech?" | one-sided + sudden -> E2 |
 | `I_bp` | "BP low hai", "BP badh gaya", "pressure" | a measured reading, or just dizziness / headache / weakness | "Did someone measure it, and what was the number? What are you actually feeling?" | per resolved symptom |
 | `I_sugar` | "sugar hai", "sugar badh gayi / gir gayi" | has diabetes; or a high / low sugar episode | "Do you have diabetes? Right now, are you sweating, shaking or confused?" | diabetic + confused / drowsy -> E13 |
-| `I_saans_phoolna` | "saans phoolna", "hamph", "hapani" | breathless on effort (common), or at rest (serious) | "Even while sitting? Can you speak a full sentence? Is it new?" | at rest / can't speak -> E3 |
+| `I_saans_phoolna` | "saans phoolna", "haanf", "hapani" | breathless on effort (common), or at rest (serious) | "Even while sitting? Can you speak a full sentence? Is it new?" | at rest / can't speak -> E3 |
 | `I_jalan` | "jalan", "jwala", "jaala" | burning urine, acidity, skin burning, or chest | "Where is the burning: when passing urine, in the stomach or chest, or on the skin?" | chest + E1 sign -> E1 |
 | `I_garmi_thand` | "garmi chadh gayi", "thanda lag gaya", "thanda lege gechhe" | fever, cold, or heat exhaustion | "Is there fever? Did anyone measure it? Since when?" | per resolved symptom (U1, E5) |
 | `I_tension` | "tension", "dimaag kharab", "mann nahi lagta" | stress, low mood, or self-harm risk | "How have you been sleeping and eating? Have you had thoughts of hurting yourself?" (asked gently) | self-harm -> E9; severe -> U8 |
