@@ -1,0 +1,214 @@
+{
+  "request": {
+    "contract": "1.0",
+    "session_id": "demo-0001",
+    "turn": 2,
+    "event": "utterance",
+    "transcript": {
+      "text": "do din se, aur aaj gardan akad gayi hai aur kuch samajh nahi aa raha unko",
+      "language": "hi",
+      "mixed_with": [],
+      "language_confidence": 0.9,
+      "stt_confidence": 0.84,
+      "alternatives": [],
+      "stt_engine": "example",
+      "barge_in": false
+    },
+    "audio": {
+      "duration_ms": 4100,
+      "speech_rate_wpm": 92,
+      "snr_db": 17,
+      "truncated": false
+    },
+    "state": {
+      "speaker": {
+        "role": "caregiver",
+        "relation": "child"
+      },
+      "patient": {
+        "age_years": 70,
+        "age_band": "60+",
+        "sex": "female"
+      },
+      "chief_complaint": {
+        "value": "fever",
+        "said": "bukhar hai",
+        "status": "heard"
+      },
+      "symptoms": [
+        {
+          "name": "fever",
+          "said": "meri maa ko bukhar hai",
+          "onset": null,
+          "duration": null,
+          "severity": null,
+          "location": null,
+          "character": null,
+          "pattern": null,
+          "associated": [],
+          "status": "heard"
+        }
+      ],
+      "history": {
+        "conditions": {
+          "value": [],
+          "status": "missing"
+        },
+        "medicines_taken": {
+          "value": [],
+          "status": "missing"
+        },
+        "allergies": {
+          "value": [],
+          "status": "missing"
+        },
+        "pregnant": {
+          "value": null,
+          "status": "missing"
+        }
+      },
+      "missing": [
+        "fever.onset",
+        "history.conditions",
+        "history.medicines_taken",
+        "history.allergies"
+      ],
+      "phase": "collecting",
+      "lang": {
+        "reply": "hi",
+        "script": "Deva",
+        "register": "respectful"
+      },
+      "no_speech_count": 0,
+      "transcript_log": [
+        {
+          "turn": 1,
+          "who": "user",
+          "text": "meri maa ko bukhar hai, she is 70",
+          "language": "hi"
+        }
+      ],
+      "_internal": {}
+    }
+  },
+  "response": {
+    "contract": "1.0",
+    "session_id": "demo-0001",
+    "turn": 2,
+    "action": "escalate",
+    "say": {
+      "text": "\u092f\u0939 \u091c\u0930\u0942\u0930\u0940 \u0939\u0948\u0964 \u0905\u092d\u0940 112 \u092a\u0930 \u092b\u094b\u0928 \u0915\u0930\u0947\u0902 \u092f\u093e \u0938\u092c\u0938\u0947 \u092a\u093e\u0938 \u0915\u0947 \u0905\u0938\u094d\u092a\u0924\u093e\u0932 \u091c\u093e\u090f\u0902\u0964",
+      "language": "hi",
+      "script": "Deva",
+      "text_roman": "Yeh zaroori hai. Abhi 112 par phone karein ya sabse paas ke aspataal jaayein.",
+      "register": "respectful",
+      "pace": "slow",
+      "interruptible": false
+    },
+    "expect": {
+      "kind": "free",
+      "choices": [],
+      "patience": "long"
+    },
+    "state": {
+      "speaker": {
+        "role": "caregiver",
+        "relation": "child"
+      },
+      "patient": {
+        "age_years": 70,
+        "age_band": "60+",
+        "sex": "female"
+      },
+      "chief_complaint": {
+        "value": "fever",
+        "said": "bukhar hai",
+        "status": "heard"
+      },
+      "symptoms": [
+        {
+          "name": "fever",
+          "said": "meri maa ko bukhar hai",
+          "onset": null,
+          "duration": "2 days",
+          "severity": null,
+          "location": null,
+          "character": null,
+          "pattern": null,
+          "associated": [
+            "confusion",
+            "stiff neck"
+          ],
+          "status": "heard"
+        }
+      ],
+      "history": {
+        "conditions": {
+          "value": [],
+          "status": "missing"
+        },
+        "medicines_taken": {
+          "value": [],
+          "status": "missing"
+        },
+        "allergies": {
+          "value": [],
+          "status": "missing"
+        },
+        "pregnant": {
+          "value": null,
+          "status": "missing"
+        }
+      },
+      "missing": [
+        "history.conditions",
+        "history.medicines_taken",
+        "history.allergies"
+      ],
+      "phase": "escalated",
+      "lang": {
+        "reply": "hi",
+        "script": "Deva",
+        "register": "respectful"
+      },
+      "no_speech_count": 0,
+      "transcript_log": [
+        {
+          "turn": 1,
+          "who": "user",
+          "text": "meri maa ko bukhar hai, she is 70",
+          "language": "hi"
+        },
+        {
+          "turn": 2,
+          "who": "user",
+          "text": "do din se, aur aaj gardan akad gayi hai aur kuch samajh nahi aa raha unko",
+          "language": "hi"
+        }
+      ],
+      "_internal": {}
+    },
+    "red_flags": [
+      {
+        "id": "fever_stiff_neck_confusion",
+        "level": "emergency",
+        "evidence": "gardan akad gayi hai aur kuch samajh nahi aa raha",
+        "turn": 2
+      }
+    ],
+    "escalation": {
+      "level": "emergency",
+      "message": "\u092f\u0939 \u091c\u0930\u0942\u0930\u0940 \u0939\u0948\u0964 \u0905\u092d\u0940 112 \u092a\u0930 \u092b\u094b\u0928 \u0915\u0930\u0947\u0902 \u092f\u093e \u0938\u092c\u0938\u0947 \u092a\u093e\u0938 \u0915\u0947 \u0905\u0938\u094d\u092a\u0924\u093e\u0932 \u091c\u093e\u090f\u0902\u0964",
+      "call": {
+        "number": "112",
+        "label": "Emergency"
+      },
+      "reason_clinician": "Fever 2 days with neck stiffness and new confusion."
+    },
+    "display": {
+      "caption": "\u092f\u0939 \u091c\u0930\u0942\u0930\u0940 \u0939\u0948\u0964 \u0905\u092d\u0940 112 \u092a\u0930 \u092b\u094b\u0928 \u0915\u0930\u0947\u0902 \u092f\u093e \u0938\u092c\u0938\u0947 \u092a\u093e\u0938 \u0915\u0947 \u0905\u0938\u094d\u092a\u0924\u093e\u0932 \u091c\u093e\u090f\u0902\u0964",
+      "summary_patient": null,
+      "summary_clinician": "EMERGENCY: 70 y female, fever 2 days, neck stiffness, new confusion. Advised to call 112."
+    }
+  }
+}

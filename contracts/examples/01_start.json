@@ -1,0 +1,86 @@
+{
+  "request": {
+    "contract": "1.0",
+    "session_id": "demo-0001",
+    "turn": 0,
+    "event": "start",
+    "transcript": null,
+    "audio": null,
+    "state": null,
+    "ui_lang_hint": "hi"
+  },
+  "response": {
+    "contract": "1.0",
+    "session_id": "demo-0001",
+    "turn": 0,
+    "action": "ask",
+    "say": {
+      "text": "\u0928\u092e\u0938\u094d\u0924\u0947\u0964 \u0906\u092a\u0915\u094b \u0915\u094d\u092f\u093e \u0924\u0915\u0932\u0940\u092b \u0939\u0948?",
+      "language": "hi",
+      "script": "Deva",
+      "text_roman": "Namaste. Aapko kya takleef hai?",
+      "register": "respectful",
+      "pace": "normal",
+      "interruptible": true
+    },
+    "expect": {
+      "kind": "free",
+      "choices": [],
+      "patience": "long"
+    },
+    "state": {
+      "speaker": {
+        "role": "unknown",
+        "relation": null
+      },
+      "patient": {
+        "age_years": null,
+        "age_band": null,
+        "sex": "unknown"
+      },
+      "chief_complaint": {
+        "value": null,
+        "said": null,
+        "status": "missing"
+      },
+      "symptoms": [],
+      "history": {
+        "conditions": {
+          "value": [],
+          "status": "missing"
+        },
+        "medicines_taken": {
+          "value": [],
+          "status": "missing"
+        },
+        "allergies": {
+          "value": [],
+          "status": "missing"
+        },
+        "pregnant": {
+          "value": null,
+          "status": "missing"
+        }
+      },
+      "missing": [
+        "chief_complaint"
+      ],
+      "phase": "collecting",
+      "lang": {
+        "reply": "hi",
+        "script": "Deva",
+        "register": "respectful"
+      },
+      "no_speech_count": 0,
+      "transcript_log": [],
+      "_internal": {}
+    },
+    "red_flags": [],
+    "escalation": null,
+    "display": {
+      "caption": "\u0928\u092e\u0938\u094d\u0924\u0947\u0964 \u0906\u092a\u0915\u094b \u0915\u094d\u092f\u093e \u0924\u0915\u0932\u0940\u092b \u0939\u0948?",
+      "summary_patient": null,
+      "summary_clinician": null
+    }
+  }
+}
