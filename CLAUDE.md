@@ -36,7 +36,8 @@ until then:
 | `IDEA.md`, `docs/round1/**`, `docs/round2/**` | both | submission drafts; edit your own sections |
 | `docs/PLAN.md` | both | only edit **your own rows** |
 | `docs/DECISIONS.md` | both | append-only, never edit someone else's entry |
-| `README.md`, `CLAUDE.md`, `scripts/collab.py` | both | small edits via PR, the other human approves |
+| `CLAUDE.md` | both | via PR only; **both Kanishk and Ritankar** approve before merge, even for small edits |
+| `README.md`, `scripts/collab.py` | both | small edits via PR, the other human approves |
 
 Need something in the other lane? Send a message (section 4) describing exactly what you need. Don't "just quickly fix"
 their file.
@@ -47,7 +48,9 @@ their file.
 - Branch per task: `r/R1-research`, `k/K2-spike` (prefix + task id + slug). Small PRs, merged often. Rebase on `main`
   before opening: `git fetch origin && git rebase origin/main`.
 - A PR that only touches your own lane: you may squash-merge it yourself once it works.
-- A PR touching `contracts/`, `README.md`, `CLAUDE.md` or `scripts/collab.py`: the other human approves on GitHub.
+- A PR touching `contracts/`, `README.md` or `scripts/collab.py`: the other human approves on GitHub.
+- A PR touching `CLAUDE.md`: **both Kanishk and Ritankar** must approve (an explicit OK from each, on GitHub or relayed
+  by their agent in the PR thread). No agent merges a `CLAUDE.md` change on one human's say-so.
 - Commit messages: `[K] K2: compare speech-to-text options on 10 utterances`. Plain, human-sounding.
   **No `Co-Authored-By: Claude` / AI attribution trailers.** Commits are authored by your human.
 - Never commit secrets, API keys, `.env`, patient-like personal data, or files > 5 MB.
