@@ -3,17 +3,21 @@
 *[R] First pass, written to start the discussion. Nothing here is decided. Edit freely.*
 
 **Hackathon:** India Runs on Voice (Wispr x Scaler), https://hackos.scaler.com/wispr/
-**Leaning towards:** Healthcare track, with older people as the main user.
+**Leaning towards:** Healthcare track, for anyone who thinks in their mother tongue. Older people are our hardest test case, not the only user.
 
 ## The gap we keep coming back to
 
-Older people, especially outside big cities, often can't describe what is wrong with them in the language a clinic
-form, an app or sometimes even the doctor uses. They think and speak in their mother tongue, mix languages, forget
-details, and lean on a family member to explain for them. Information gets lost before care even starts.
+A lot of people can't describe what is wrong with them in the language a clinic form, an app or sometimes even the
+doctor uses. They think and speak in their mother tongue and mix languages, and the details get lost before care even
+starts. This is true for a migrant worker in a new city as much as for someone in a village.
+
+Older people feel it the most: slower speech, forgotten details, often a family member explaining for them. So we
+treat them as the **hardest case to design for**: if it works for a 70-year-old speaking Bengali-English mix, it should
+work for everyone.
 
 ## Direction (not a design)
 
-Something voice-first that lets an older person (or their caregiver) say what they are feeling, in whatever language
+Something voice-first that lets a patient (or someone speaking for them) say what they are feeling, in whatever language
 or mix comes naturally, and turns it into something useful for whoever helps them next. Roughly in the space of
 "symptom intake", but how far it goes is open.
 
@@ -27,12 +31,11 @@ or mix comes naturally, and turns it into something useful for whoever helps the
 
 ## Open questions to decide together
 
-1. **Who is the user, really?** The older person alone, a caregiver speaking for them, or both?
+1. **Who do we demo with?** Older patient, caregiver speaking for them, a young migrant worker, or a mix?
 2. **Where does it live?** Phone call, WhatsApp-style voice note, an app, a kiosk at a clinic or pharmacy?
 3. **Who receives the output?** A doctor, an ASHA / health worker, a family member, the person themselves?
 4. **Where does it stop?** Just intake? Reminders and follow-ups? Helping with the next visit?
-5. **Healthcare track or Everyday access track?** Healthcare fits best if this stays health-focused; Everyday access
-   if it becomes a broader daily-life helper for older people.
+5. **Track:** Healthcare (the user is anyone; older people are the stress test, so we're not tied to the Everyday access track).
 6. **Third teammate?** Teams lock after the first submission, so decide before we submit the Round 1 idea.
 
 ## What we can reuse from Desi Agent
