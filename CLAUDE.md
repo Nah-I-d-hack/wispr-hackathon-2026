@@ -7,10 +7,10 @@ then `docs/PLAN.md`.
 
 ## 0. Who is who
 
-| Agent id | Human | Lane (proposed, see PLAN.md) | Branch prefix |
+| Agent id | Human | Lane (agreed Nov 14, see PLAN.md) | Branch prefix |
 |---|---|---|---|
-| **R** | Ritankar (GitHub `CyberRik`) | research, safety, evaluation | `r/` |
-| **K** | GitHub `ActiveMasquerade` | build and ship | `k/` |
+| **R** | Ritankar (GitHub `CyberRik`) | intake agent: what to say, red flags, agent evaluation | `r/` |
+| **K** | GitHub `ActiveMasquerade` | voice layer (speech in and out) + app, deployment, demo, voice evaluation | `k/` |
 
 At session start, ask your human "am I R or K?" if it is not obvious, and say it back. Every commit, PR, issue
 comment and handoff note you write starts with your id, e.g. `[R]`.
@@ -30,8 +30,9 @@ until then:
 | Path | Owner | Notes |
 |---|---|---|
 | `contracts/**` | **shared, frozen once written** | Change only via a PR titled `CONTRACT:` that the *other* human approves |
-| `docs/RESEARCH.md`, `docs/SAFETY.md`, `eval/**`, `data/**` | R | research, safety rules, test sets, evaluation |
-| `docs/SPIKE.md`, `app/**`, `deploy/**` | K | voice pipeline, app, deployment, demo |
+| `agent/**`, `docs/SAFETY.md`, `eval/agent/**`, `data/**` | R | intake agent (follow-ups, read-back, corrections, red flags, escalation), its test set and evaluation |
+| `voice/**`, `app/**`, `deploy/**`, `docs/SPIKE.md`, `eval/voice/**` | K | speech-to-text, language ID, text-to-speech, app/UI, deployment, demo; voice evaluation |
+| `docs/RESEARCH.md` | both | problem research (R1), edit your own sections |
 | `IDEA.md`, `docs/round1/**`, `docs/round2/**` | both | submission drafts; edit your own sections |
 | `docs/PLAN.md` | both | only edit **your own rows** |
 | `docs/DECISIONS.md` | both | append-only, never edit someone else's entry |
