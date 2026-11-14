@@ -10,7 +10,7 @@ then `docs/PLAN.md`.
 | Agent id | Human | Lane (agreed Nov 14, see PLAN.md) | Branch prefix |
 |---|---|---|---|
 | **R** | Ritankar (GitHub `CyberRik`) | intake agent: what to say, red flags, agent evaluation | `r/` |
-| **K** | GitHub `ActiveMasquerade` | voice layer (speech in and out) + app, deployment, demo, voice evaluation | `k/` |
+| **K** | Kanishk (GitHub `ActiveMasquerade`) | voice layer (speech in and out) + app, deployment, demo, voice evaluation | `k/` |
 
 At session start, ask your human "am I R or K?" if it is not obvious, and say it back. Every commit, PR, issue
 comment and handoff note you write starts with your id, e.g. `[R]`.
