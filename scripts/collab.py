@@ -78,7 +78,7 @@ def set_status(num: int, status: str | None) -> None:
 def parse_plan() -> list[dict]:
     rows = []
     for line in (ROOT / "docs/PLAN.md").read_text(encoding="utf-8").splitlines():
-        m = re.match(r"^\|\s*([RKS]\d+)\s*\|\s*(.+?)\s*\|\s*(\S+)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|", line)
+        m = re.match(r"^\|\s*([RKSC]\d+)\s*\|\s*(.+?)\s*\|\s*(\S+)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|", line)
         if m:
             rows.append(dict(zip(("id", "title", "owner", "deps", "due"), m.groups())))
     return rows
@@ -98,8 +98,8 @@ def cmd_bootstrap(a) -> None:
 
 
 def cmd_status(a) -> None:
-    for i in sorted((i for i in issues() if re.match(r"^[RKS]\d+:", i["title"])),
-                    key=lambda i: (i["title"][0], int(re.match(r"^.(\d+)", i["title"]).group(1)))):
+    for i in sorted((i for i in issues() if re.match(r"^[RKSC]\d+:", i["title"])),
+                    key=lambda i: ("SCRK".index(i["title"][0]), int(re.match(r"^.(\d+)", i["title"]).group(1)))):
         labels = [l["name"] for l in i["labels"]]
         st = "done" if i["state"] == "CLOSED" else next((l[7:] for l in labels if l.startswith("status:")), "todo")
         who = ",".join(x["login"] for x in i["assignees"]) or "-"
