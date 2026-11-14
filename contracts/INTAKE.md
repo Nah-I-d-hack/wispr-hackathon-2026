@@ -39,7 +39,7 @@ breaks something and needs a `CONTRACT:` PR.
 | `contract` | `"1.0"` | yes | |
 | `session_id` | string | yes | K generates one per conversation (uuid). Opaque to R |
 | `turn` | int | yes | 0 for `start`, then +1 per request |
-| `event` | enum | yes | `start` (conversation opens, no speech yet), `utterance` (user said something), `no_speech` (K's silence timeout passed), `barge_in` (user spoke over the agent; `utterance` follows), `end` (user or UI closed) |
+| `event` | enum | yes | `start` (conversation opens, no speech yet), `utterance` (user said or typed something), `no_speech` (K's silence timeout passed), `end` (user or UI closed) |
 | `transcript` | object or null | for `utterance` | see below |
 | `audio` | object or null | no | see below |
 | `state` | object or null | yes | the `state` from the previous TurnResponse, untouched; `null` on `start` |
@@ -51,12 +51,13 @@ breaks something and needs a `CONTRACT:` PR.
 | field | type | required | meaning |
 |---|---|---|---|
 | `text` | string | yes | final transcript as STT gives it (native, Latin or mixed script, whatever comes out) |
-| `language` | string | yes | detected primary language, ISO 639-1: `hi`, `bn`, `en`, or `und` if unknown |
+| `language` | string | yes | detected primary language, ISO 639-1 (`hi`, `bn`, `en`), or `und` if unknown |
 | `mixed_with` | string[] | no | other languages detected in the same utterance, e.g. `["en"]` for Hinglish |
 | `language_confidence` | float 0-1 or null | no | |
 | `stt_confidence` | float 0-1 or null | no | utterance-level confidence if the engine gives one |
 | `alternatives` | string[] | no | n-best alternatives if the engine gives them, best first, excluding `text` |
-| `stt_engine` | string | no | e.g. `"sarvam-saarika-v2"`, for logs and eval manifests |
+| `stt_engine` | string | no | e.g. `"wispr-flow"`, or `"typed"` for typed input; for logs and eval manifests |
+| `barge_in` | bool | no | true if the user started speaking over the agent's last reply (K stopped TTS). Default false |
 
 `audio` (all optional; send what you have):
 
@@ -207,6 +208,8 @@ Rules both sides rely on:
   and `say` is a safe canned line ("Sorry, could you say that again?", in the session language).
 - If K can't reach the agent at all (HTTP error or > 5 s), K speaks its own canned line in the session language and
   keeps the last `state`; nothing is lost. K keeps these canned lines in `voice/` or `app/`.
+- **Typed input** (accessibility, or demo fallback if the mic/STT fails): an `utterance` with `stt_engine: "typed"` and
+  `stt_confidence: null`. The agent treats it exactly like speech.
 - Bad request (missing required field, unknown `contract` major version): HTTP `400` with
   `{"error": "...", "field": "..."}`; in-process, `ValueError`.
 
@@ -229,9 +232,10 @@ Hindi. More languages are an additive change (1.x).
   fixtures in `contracts/examples/` in order, so K3 can run end to end.
 - **R, before K3:** text-only harness: typed transcripts in, TurnResponses out, scored on the R2 test set.
 
-## Open questions for K (answer in the PR)
+## Settled in review (PR #24)
 
-1. In-process Python, HTTP, or both for K3? Depends on your K2 stack. Both are cheap on my side.
-2. Does your STT give n-best `alternatives` or per-utterance confidence? If not, I'll lean on the read-back more.
-3. Can the app do barge-in (stop TTS when the user starts talking)? If not, drop the `barge_in` event from v1.
-4. Is a 5 s client timeout right for the demo network, or do you want a tighter one?
+- Transport: HTTP for the app (K3); the in-process binding stays for tests and replay.
+- Speech-to-text is the Wispr Flow API (#29): it gives `language` but no confidence or n-best, so those fields are
+  usually null and the read-back carries more weight. K passes the agent's last `say.text` to Wispr as context.
+- Barge-in is a flag on the utterance (`transcript.barge_in`), not a separate event, so it costs one request, not two.
+- Client timeout 5 s; the app shows a "thinking" cue after about 1.2 s.

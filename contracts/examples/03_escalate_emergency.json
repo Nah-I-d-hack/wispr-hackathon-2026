@@ -11,7 +11,8 @@
       "language_confidence": 0.9,
       "stt_confidence": 0.84,
       "alternatives": [],
-      "stt_engine": "example"
+      "stt_engine": "example",
+      "barge_in": false
     },
     "audio": {
       "duration_ms": 4100,
@@ -22,10 +23,10 @@
     "state": {
       "speaker": {
         "role": "caregiver",
-        "relation": "son"
+        "relation": "child"
       },
       "patient": {
-        "age_years": null,
+        "age_years": 70,
         "age_band": "60+",
         "sex": "female"
       },
@@ -112,10 +113,10 @@
     "state": {
       "speaker": {
         "role": "caregiver",
-        "relation": "son"
+        "relation": "child"
       },
       "patient": {
-        "age_years": null,
+        "age_years": 70,
         "age_band": "60+",
         "sex": "female"
       },
@@ -129,7 +130,7 @@
           "name": "fever",
           "said": "meri maa ko bukhar hai",
           "onset": null,
-          "duration": null,
+          "duration": "2 days",
           "severity": null,
           "location": null,
           "character": null,
@@ -160,7 +161,6 @@
         }
       },
       "missing": [
-        "fever.onset",
         "history.conditions",
         "history.medicines_taken",
         "history.allergies"
@@ -208,7 +208,7 @@
     "display": {
       "caption": "\u092f\u0939 \u091c\u0930\u0942\u0930\u0940 \u0939\u0948\u0964 \u0905\u092d\u0940 112 \u092a\u0930 \u092b\u094b\u0928 \u0915\u0930\u0947\u0902 \u092f\u093e \u0938\u092c\u0938\u0947 \u092a\u093e\u0938 \u0915\u0947 \u0905\u0938\u094d\u092a\u0924\u093e\u0932 \u091c\u093e\u090f\u0902\u0964",
       "summary_patient": null,
-      "summary_clinician": "EMERGENCY: ~70 y female, fever 2 days, neck stiffness, new confusion. Advised to call 112."
+      "summary_clinician": "EMERGENCY: 70 y female, fever 2 days, neck stiffness, new confusion. Advised to call 112."
     }
   }
 }

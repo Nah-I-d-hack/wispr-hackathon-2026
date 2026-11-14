@@ -13,7 +13,8 @@
       "language_confidence": 0.81,
       "stt_confidence": 0.88,
       "alternatives": [],
-      "stt_engine": "example"
+      "stt_engine": "example",
+      "barge_in": false
     },
     "audio": {
       "duration_ms": 2900,
@@ -91,10 +92,10 @@
     "state": {
       "speaker": {
         "role": "caregiver",
-        "relation": "son"
+        "relation": "child"
       },
       "patient": {
-        "age_years": null,
+        "age_years": 70,
         "age_band": "60+",
         "sex": "female"
       },
@@ -163,7 +164,7 @@
     "display": {
       "caption": "\u0915\u092c \u0938\u0947 \u0939\u0948?",
       "summary_patient": null,
-      "summary_clinician": "Caregiver (son) reporting for mother, ~70 y: fever. Onset not yet known."
+      "summary_clinician": "Caregiver (patient's child) reporting for mother, 70 y: fever. Onset not yet known."
     }
   }
 }
