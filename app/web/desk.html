@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bolo desk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&family=Noto+Sans+Bengali:wght@400;600&family=Noto+Sans+Devanagari:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { max-width: 960px; }
+    .deskbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; flex-wrap: wrap; }
+    .deskbar h1 { font-size: 20px; margin: 0; display: flex; gap: 8px; align-items: center; }
+    .deskbar button { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 8px 12px; cursor: pointer; min-height: 40px; }
+    #list { display: grid; gap: 12px; padding: 0 16px 24px; }
+    .pt { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; display: grid; gap: 6px; }
+    .pt.emergency { border: 2px solid var(--danger); background: var(--danger-bg); }
+    .pt.emergency.new { animation: flash 1s ease-in-out 3; }
+    .pt.urgent { border-left: 6px solid var(--focus); }
+    .pt .row { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: baseline; }
+    .pt .who { font-weight: 700; }
+    .pt .meta { font-size: 13px; color: var(--muted); }
+    .pt .complaint { font-size: 18px; }
+    .pt .flag { color: var(--danger); font-weight: 700; }
+    .pt .sum { font-size: 15px; color: var(--muted); }
+    .pt button { justify-self: start; border: 2px solid var(--danger); color: var(--danger); background: transparent; border-radius: 999px; padding: 6px 14px; font-weight: 700; cursor: pointer; }
+    .empty { color: var(--muted); padding: 32px 16px; text-align: center; }
+    @keyframes flash { 50% { box-shadow: 0 0 0 6px var(--danger); } }
+    @media (prefers-reduced-motion: reduce) { .pt.emergency.new { animation: none; } }
+  </style>
+</head>
+<body>
+  <div class="deskbar">
+    <h1><span class="dot"></span>Bolo desk <small style="font-weight:400;color:var(--muted);font-size:13px">live intakes · emergencies first</small></h1>
+    <button id="sound" aria-pressed="false">🔕 Sound off</button>
+  </div>
+  <div id="list"><p class="empty">No conversations yet. Open the patient app and start one.</p></div>
+  <script src="desk.js"></script>
+</body>
+</html>
