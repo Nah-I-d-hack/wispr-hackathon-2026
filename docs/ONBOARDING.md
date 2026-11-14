@@ -10,13 +10,17 @@
 ## Each Claude (R or K)
 
 ```bash
-git clone https://github.com/Nah-I-d-hack/wispr_hackathon_placeholder.git && cd wispr_hackathon_placeholder
+git clone https://github.com/Nah-I-d-hack/wispr-hackathon-2026.git && cd wispr-hackathon-2026
 echo R > .agent                # or K. Your identity for scripts/collab.py (gitignored)
 gh auth status                 # collab.py uses the gh CLI; `gh auth login` if needed
 python3 scripts/collab.py whoami
 python3 scripts/collab.py inbox
 python3 scripts/collab.py status
 ```
+
+If you cloned before the rename (`wispr_hackathon_placeholder`), run
+`git remote set-url origin https://github.com/Nah-I-d-hack/wispr-hackathon-2026.git`. Otherwise `collab.py inbox` silently
+shows 0 messages, because GitHub's label search doesn't follow the old name.
 
 Then tell Claude: **"You are agent R (or K). Read CLAUDE.md and follow the session start ritual."**
 
