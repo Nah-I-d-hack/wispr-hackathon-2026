@@ -3,7 +3,7 @@
 **Hackathon:** India Runs on Voice (Scaler × Wispr), **Healthcare track**. Rules and dates: `docs/HACKATHON.md`.
 Key deadlines (IST): Round 1 closes **26 Nov** · Round 2 build due **29 Nov** · finale **13 Dec**.
 
-Team: R = Ritankar (GitHub `CyberRik`) · K = (GitHub `ActiveMasquerade`) · 3rd member: *decide before S1, team locks
+Team: R = Ritankar (GitHub `CyberRik`) · K = Kanishk (GitHub `ActiveMasquerade`) · 3rd member: *decide before S1, team locks
 after the first submission*.
 
 Status of each task is tracked in its GitHub issue (`python scripts/collab.py status`), not in this file.
