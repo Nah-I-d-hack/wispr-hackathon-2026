@@ -67,6 +67,7 @@ carry the sign (romanised here; the agent matches native script too). A rule fir
 | `U6_fall_older` | a fall in someone 65+ with pain, can't put weight on a leg, or hit their head (without E11 signs) |
 | `U7_one_leg_swelling` | one leg suddenly swollen, painful, warm |
 | `U8_mental_distress` | severe distress, panic, not sleeping or eating for days, without self-harm thoughts. Tele-MANAS 14416 is offered |
+| `U9_llm_concern` | safety net: no rule fired, but the understanding model (Gemini) judges the situation urgent or an emergency. Raised as **urgent only**, never emergency, with the model's reason for the clinician. Emergencies stay rule-based and deterministic |
 
 ## 4. Idioms: phrases that need one more question
 
