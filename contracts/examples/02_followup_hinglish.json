@@ -1,0 +1,169 @@
+{
+  "request": {
+    "contract": "1.0",
+    "session_id": "demo-0001",
+    "turn": 1,
+    "event": "utterance",
+    "transcript": {
+      "text": "meri maa ko bukhar hai, she is 70",
+      "language": "hi",
+      "mixed_with": [
+        "en"
+      ],
+      "language_confidence": 0.81,
+      "stt_confidence": 0.88,
+      "alternatives": [],
+      "stt_engine": "example"
+    },
+    "audio": {
+      "duration_ms": 2900,
+      "speech_rate_wpm": 96,
+      "snr_db": 18,
+      "truncated": false
+    },
+    "state": {
+      "speaker": {
+        "role": "unknown",
+        "relation": null
+      },
+      "patient": {
+        "age_years": null,
+        "age_band": null,
+        "sex": "unknown"
+      },
+      "chief_complaint": {
+        "value": null,
+        "said": null,
+        "status": "missing"
+      },
+      "symptoms": [],
+      "history": {
+        "conditions": {
+          "value": [],
+          "status": "missing"
+        },
+        "medicines_taken": {
+          "value": [],
+          "status": "missing"
+        },
+        "allergies": {
+          "value": [],
+          "status": "missing"
+        },
+        "pregnant": {
+          "value": null,
+          "status": "missing"
+        }
+      },
+      "missing": [
+        "chief_complaint"
+      ],
+      "phase": "collecting",
+      "lang": {
+        "reply": "hi",
+        "script": "Deva",
+        "register": "respectful"
+      },
+      "no_speech_count": 0,
+      "transcript_log": [],
+      "_internal": {}
+    }
+  },
+  "response": {
+    "contract": "1.0",
+    "session_id": "demo-0001",
+    "turn": 1,
+    "action": "ask",
+    "say": {
+      "text": "\u0915\u092c \u0938\u0947 \u0939\u0948?",
+      "language": "hi",
+      "script": "Deva",
+      "text_roman": "Kab se hai?",
+      "register": "respectful",
+      "pace": "slow",
+      "interruptible": true
+    },
+    "expect": {
+      "kind": "duration",
+      "choices": [],
+      "patience": "long"
+    },
+    "state": {
+      "speaker": {
+        "role": "caregiver",
+        "relation": "son"
+      },
+      "patient": {
+        "age_years": null,
+        "age_band": "60+",
+        "sex": "female"
+      },
+      "chief_complaint": {
+        "value": "fever",
+        "said": "bukhar hai",
+        "status": "heard"
+      },
+      "symptoms": [
+        {
+          "name": "fever",
+          "said": "meri maa ko bukhar hai",
+          "onset": null,
+          "duration": null,
+          "severity": null,
+          "location": null,
+          "character": null,
+          "pattern": null,
+          "associated": [],
+          "status": "heard"
+        }
+      ],
+      "history": {
+        "conditions": {
+          "value": [],
+          "status": "missing"
+        },
+        "medicines_taken": {
+          "value": [],
+          "status": "missing"
+        },
+        "allergies": {
+          "value": [],
+          "status": "missing"
+        },
+        "pregnant": {
+          "value": null,
+          "status": "missing"
+        }
+      },
+      "missing": [
+        "fever.onset",
+        "history.conditions",
+        "history.medicines_taken",
+        "history.allergies"
+      ],
+      "phase": "collecting",
+      "lang": {
+        "reply": "hi",
+        "script": "Deva",
+        "register": "respectful"
+      },
+      "no_speech_count": 0,
+      "transcript_log": [
+        {
+          "turn": 1,
+          "who": "user",
+          "text": "meri maa ko bukhar hai, she is 70",
+          "language": "hi"
+        }
+      ],
+      "_internal": {}
+    },
+    "red_flags": [],
+    "escalation": null,
+    "display": {
+      "caption": "\u0915\u092c \u0938\u0947 \u0939\u0948?",
+      "summary_patient": null,
+      "summary_clinician": "Caregiver (son) reporting for mother, ~70 y: fever. Onset not yet known."
+    }
+  }
+}
