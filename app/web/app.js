@@ -10,7 +10,7 @@ const UI = {
   bn: { ready: "কথা বলতে মাইক চাপুন", listening: "শুনছি…", thinking: "ভাবছি…", speaking: "বলছি…", done: "কথা শেষ হয়েছে", offline: "মাফ করবেন, এখন সংযোগ হচ্ছে না। আবার বলুন।" },
   en: { ready: "Tap the mic to speak", listening: "Listening…", thinking: "Thinking…", speaking: "Speaking…", done: "Conversation finished", offline: "Sorry, I can't connect right now. Please say that again." },
 };
-const FIELD_LABEL = { chief_complaint: "Complaint", duration: "Since", conditions: "Conditions" };
+const FIELD_LABEL = { chief_complaint: "Complaint", duration: "Since", age: "Age", conditions: "Conditions", medicines: "Medicines" };
 
 const $ = (id) => document.getElementById(id);
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -69,7 +69,11 @@ function renderSummary(r) {
   const s0 = (st.symptoms || [])[0];
   if (s0 && s0.duration) rows.push(["duration", s0.duration, s0.status]);
   const c = st.history && st.history.conditions;
+  const pt = st.patient || {};
+  if (pt.age_years || pt.age_band) rows.push(["age", pt.age_years ? String(pt.age_years) : pt.age_band, "heard"]);
   if (c && c.value && c.value.length) rows.push(["conditions", c.value.join(", "), c.status]);
+  const m = st.history && st.history.medicines_taken;
+  if (m && m.value && m.value.length) rows.push(["medicines", m.value.join(", "), m.status]);
   const dl = $("fields"); dl.replaceChildren();
   for (const [k, v, s] of rows) {
     const dt = document.createElement("dt"); dt.textContent = FIELD_LABEL[k] || k;
@@ -82,10 +86,17 @@ function renderSummary(r) {
   $("clin").hidden = !clin; $("clin-text").textContent = clin || "";
 }
 function renderEscalation(r) {
-  if (!r.escalation) return;
-  $("escalation").hidden = false;
-  $("esc-text").textContent = r.escalation.message;
-  const call = r.escalation.call;
+  const e = r.escalation;
+  if (!e) return;
+  const box = $("escalation"), prevEmergency = box.classList.contains("emergency") && !box.hidden;
+  if (prevEmergency && e.level !== "emergency") return;  // never downgrade a shown emergency within the session
+  box.hidden = false;
+  box.classList.toggle("emergency", e.level === "emergency");
+  box.classList.toggle("urgent", e.level !== "emergency");
+  $("esc-text").textContent = e.message;
+  const call = e.call;
+  // Urgent ("see a doctor today") has no number: show no call button rather than a misleading 112.
+  $("esc-call").hidden = !call;
   if (call) { $("esc-call").href = `tel:${call.number}`; $("esc-call").querySelector("span").textContent = `${call.number} · ${call.label}`; }
   // A helpline (e.g. Tele-MANAS 14416 for self-harm) is primary, and 112 stays one tap away as a second button.
   $("esc-call2").hidden = !call || call.number === "112";
@@ -118,7 +129,7 @@ async function send(event, transcript = null, audio = null) {
   turnNo += 1;
   agentState = r.state; lastResp = r;
   const roundtrip = Math.round(performance.now() - t0);
-  bubble("agent", r.say.text, r.action === "escalate" ? "escalate" : "");
+  bubble("agent", r.say.text, r.action !== "escalate" ? "" : (r.escalation && r.escalation.level === "urgent" ? "urgent" : "escalate"));
   renderSummary(r); renderEscalation(r);
   $("meta").textContent = `agent ${r.debug?.model || ""} · round trip ${roundtrip} ms`;
   const next = r.action === "done" ? () => status("done") : () => { if (autoListen) listen(); else status("ready"); };

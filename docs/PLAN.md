@@ -30,7 +30,7 @@ language and register, intake state, red flags}`; K turns the text into speech.
 | R1 | Problem research (shared): who does healthcare symptom intake serve (patients, ASHA workers, clinic front desks), which languages, what exists, what must never happen. `docs/RESEARCH.md`, 1 to 2 pages | S | - | Nov 17 |
 | C1 | Contract: intake schema + agent I/O in `contracts/INTAKE.md` (R drafts, K approves as a `CONTRACT:` PR) | R | - | Nov 17 |
 | S1 | Round 1 "Idea" submission (Healthcare). R's draft is `IDEA.md` (mother-tongue users, older people as the hardest case); settle the open questions, humans submit | S | R1 | Nov 18 |
-| K2 | Tech spike: Wispr Flow API as speech-to-text + language ID (Hindi, Bengali, code-mixed; browser STT as fallback), and pick a text-to-speech engine for those languages. Compare latency, cost (free tiers), and quality on 10 recorded test utterances. `docs/SPIKE.md` | K | - | Nov 19 |
+| K2 | Tech spike: pick speech-to-text (Wispr Flow API vs alternatives; browser STT as fallback) + language ID for Hindi, Bengali, code-mixed, and a text-to-speech engine for those languages. Compare latency, cost (free tiers), and quality on 10 recorded test utterances. `docs/SPIKE.md` | K | - | Nov 19 |
 | S2 | Round 1 "Prompt" submission (opened Nov 13). Draft in `docs/round1/PROMPT.md` | S | S1 | Nov 21 |
 | R2 | Safety + evaluation plan: intake only, never diagnosis; red-flag symptoms trigger an escalation message; a test set of utterances per language with expected fields and flags | R | R1 | Nov 21 |
 | R3 | Intake agent v1 behind the C1 contract: transcript in, next utterance + intake state + red flags out; scored on the R2 test set | R | C1, R2 | Nov 25 |

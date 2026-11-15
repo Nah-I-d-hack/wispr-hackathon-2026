@@ -2,6 +2,7 @@
   --bg: #f6f5f1; --surface: #ffffff; --ink: #1d1f1e; --muted: #5d6461; --line: #e3e1da;
   --brand: #0f6e56; --brand-ink: #ffffff; --agent: #e8f2ee; --user: #0f6e56; --user-ink: #ffffff;
   --danger: #b3261e; --danger-bg: #fdecea; --focus: #f2a33a;
+  --urgent: #b26a00; --urgent-bg: #fff4e0; --urgent-ink: #7a4800;
   --font: "Noto Sans", "Noto Sans Devanagari", "Noto Sans Bengali", system-ui, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
@@ -9,12 +10,14 @@
     --bg: #121514; --surface: #1b1f1e; --ink: #eef1ef; --muted: #a3aba7; --line: #2b302e;
     --brand: #3fb391; --brand-ink: #0b1a15; --agent: #1f2a26; --user: #2f8f73; --user-ink: #ffffff;
     --danger: #ff8a80; --danger-bg: #3a1d1b;
+    --urgent: #ffb74d; --urgent-bg: #33270f; --urgent-ink: #ffcc80;
   }
 }
 :root[data-theme="dark"] {
   --bg: #121514; --surface: #1b1f1e; --ink: #eef1ef; --muted: #a3aba7; --line: #2b302e;
   --brand: #3fb391; --brand-ink: #0b1a15; --agent: #1f2a26; --user: #2f8f73; --user-ink: #ffffff;
   --danger: #ff8a80; --danger-bg: #3a1d1b;
+  --urgent: #ffb74d; --urgent-bg: #33270f; --urgent-ink: #ffcc80;
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -46,10 +49,13 @@ main { flex: 1; padding: 0 16px 16px; display: flex; flex-direction: column; gap
 .msg.user.interim { opacity: .65; }
 .msg .tag { display: block; font-size: 12px; opacity: .75; margin-top: 2px; }
 .msg.escalate { background: var(--danger-bg); color: var(--danger); font-weight: 600; }
+.msg.urgent { background: var(--urgent-bg); color: var(--urgent-ink); font-weight: 600; }
 
 .escalation { background: var(--danger-bg); border: 2px solid var(--danger); border-radius: 16px; padding: 14px;
   display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
 .esc-text { color: var(--danger); font-weight: 700; font-size: 20px; flex: 1 1 200px; }
+.escalation.urgent { background: var(--urgent-bg); border-color: var(--urgent); }
+.escalation.urgent .esc-text { color: var(--urgent-ink); }
 .call { background: var(--danger); color: #fff; text-decoration: none; font-weight: 700; font-size: 24px;
   padding: 12px 20px; border-radius: 999px; min-height: 56px; display: inline-flex; align-items: center; gap: 8px; }
 
