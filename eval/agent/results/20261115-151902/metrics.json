@@ -1,0 +1,137 @@
+{
+  "intake_test_v1": {
+    "bolo": {
+      "cases": 64,
+      "emergency_recall": 1.0,
+      "emergency_missed": [],
+      "emergency_id_exact": 1.0,
+      "urgent_recall": 1.0,
+      "urgent_missed": [],
+      "false_emergency_rate": 0.0,
+      "false_emergency_hard_negatives": 0.0,
+      "false_emergency_ids": [],
+      "emergency_any_flag": 1.0,
+      "false_any_flag_rate": 0.176,
+      "false_any_flag_ids": [
+        "hi-009",
+        "hi-010",
+        "en-011"
+      ],
+      "idiom_resolution": 1.0,
+      "idiom_subset_emergency_recall": 1.0,
+      "field_accuracy": 0.939,
+      "diagnosis_slip_replies": 0,
+      "reply_language_match": 1.0,
+      "latency_ms_p50": 3154,
+      "latency_ms_p95": 6334,
+      "llm_fallback_turns": "10/94"
+    },
+    "plain_llm": {
+      "cases": 64,
+      "emergency_recall": 0.919,
+      "emergency_missed": [
+        "hi-008",
+        "en-004",
+        "bn-008"
+      ],
+      "emergency_id_exact": 0.0,
+      "urgent_recall": 1.0,
+      "urgent_missed": [],
+      "false_emergency_rate": 0.148,
+      "false_emergency_hard_negatives": 0.083,
+      "false_emergency_ids": [
+        "hi-006",
+        "hi-028",
+        "hi-034",
+        "en-009"
+      ],
+      "emergency_any_flag": 1.0,
+      "false_any_flag_rate": 0.588,
+      "false_any_flag_ids": [
+        "hi-004",
+        "bn-003",
+        "hi-009",
+        "hi-010",
+        "bn-005",
+        "hi-028",
+        "hi-013",
+        "bn-013",
+        "bn-017",
+        "en-011"
+      ],
+      "idiom_resolution": 0.846,
+      "idiom_subset_emergency_recall": 0.917,
+      "field_accuracy": null,
+      "diagnosis_slip_replies": 10,
+      "reply_language_match": null,
+      "latency_ms_p50": 9110,
+      "latency_ms_p95": 24238,
+      "llm_fallback_turns": "0/94"
+    }
+  },
+  "intake_holdout_v1": {
+    "bolo": {
+      "cases": 34,
+      "emergency_recall": 0.895,
+      "emergency_missed": [
+        "en-h02",
+        "bn-h01"
+      ],
+      "emergency_id_exact": 0.895,
+      "urgent_recall": 1.0,
+      "urgent_missed": [],
+      "false_emergency_rate": 0.0,
+      "false_emergency_hard_negatives": 0.0,
+      "false_emergency_ids": [],
+      "emergency_any_flag": 0.895,
+      "false_any_flag_rate": 0.125,
+      "false_any_flag_ids": [
+        "hi-h17"
+      ],
+      "idiom_resolution": 1.0,
+      "idiom_subset_emergency_recall": 1.0,
+      "field_accuracy": null,
+      "diagnosis_slip_replies": 0,
+      "reply_language_match": 1.0,
+      "latency_ms_p50": 2198,
+      "latency_ms_p95": 7741,
+      "llm_fallback_turns": "6/43"
+    },
+    "plain_llm": {
+      "cases": 34,
+      "emergency_recall": 0.947,
+      "emergency_missed": [
+        "bn-h03"
+      ],
+      "emergency_id_exact": 0.0,
+      "urgent_recall": 1.0,
+      "urgent_missed": [],
+      "false_emergency_rate": 0.2,
+      "false_emergency_hard_negatives": 0.0,
+      "false_emergency_ids": [
+        "hi-h02",
+        "hi-h14",
+        "bn-h05"
+      ],
+      "emergency_any_flag": 1.0,
+      "false_any_flag_rate": 0.875,
+      "false_any_flag_ids": [
+        "hi-h03",
+        "hi-h05",
+        "en-h03",
+        "en-h11",
+        "bn-h05",
+        "hi-h17",
+        "hi-h18"
+      ],
+      "idiom_resolution": 0.889,
+      "idiom_subset_emergency_recall": 1.0,
+      "field_accuracy": null,
+      "diagnosis_slip_replies": 5,
+      "reply_language_match": null,
+      "latency_ms_p50": 7884,
+      "latency_ms_p95": 11969,
+      "llm_fallback_turns": "0/43"
+    }
+  }
+}

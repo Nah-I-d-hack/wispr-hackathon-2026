@@ -397,7 +397,8 @@ def turn(req: dict) -> dict:
                     st["raised"].append(f)
                     new_flags.append(f)
             # LLM safety net (SAFETY.md U9): only when no rule has fired in this session, and only ever urgent
-            if u and u.get("danger") in ("urgent", "emergency") and not st["raised"]:
+            # only the model's "emergency" judgement counts: its "urgent" fired on harmless cases in eval
+            if u and u.get("danger") == "emergency" and not st["raised"]:
                 f = {"id": "U9_llm_concern", "level": "urgent", "turn": req["turn"],
                      "evidence": f"{text} [model: {u.get('danger')}; {u.get('danger_reason') or '-'}]"}
                 st["raised"].append(f)
