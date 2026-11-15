@@ -20,14 +20,17 @@ import json
 import os
 import subprocess
 import time
+import uuid
 from pathlib import Path
 
 import httpx
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from voice import stt as stt_mod
 from voice import vocab, wispr
+from voice.call import CallSession
 
 from . import mock_agent
 
@@ -56,30 +59,91 @@ def health() -> dict:
             "stt": "wispr" if wispr.available() else "browser"}
 
 
-@app.post("/v1/turn")
-async def turn(request: Request) -> JSONResponse:
-    req = await request.json()
+class AgentBadRequest(Exception):
+    def __init__(self, body: dict):
+        self.body = body
+
+
+async def agent_turn(req: dict) -> dict:
+    """One C1 turn against R's agent (AGENT_URL) or the mock; logs it and updates the desk. Shared by chat and calls."""
     sid = str(req.get("session_id", "nosession")).replace("/", "_")[:64]
     t0 = time.perf_counter()
-    try:
-        if AGENT_URL:
-            async with httpx.AsyncClient(timeout=AGENT_TIMEOUT_S) as c:
-                r = await c.post(f"{AGENT_URL}/v1/turn", json=req)
-            if r.status_code == 400:
-                return JSONResponse(r.json(), status_code=400)
-            r.raise_for_status()
-            resp = r.json()
-        else:
+    if AGENT_URL:
+        async with httpx.AsyncClient(timeout=AGENT_TIMEOUT_S) as c:
+            r = await c.post(f"{AGENT_URL}/v1/turn", json=req)
+        if r.status_code == 400:
+            raise AgentBadRequest(r.json())
+        r.raise_for_status()
+        resp = r.json()
+    else:
+        try:
             resp = mock_agent.turn(req)
-    except ValueError as e:
-        return JSONResponse({"error": str(e), "field": "contract"}, status_code=400)
-    except (httpx.HTTPError, KeyError) as e:
-        # The app speaks its own canned line and keeps the last state (contract §9).
-        raise HTTPException(status_code=502, detail=f"agent unavailable: {type(e).__name__}")
+        except ValueError as e:
+            raise AgentBadRequest({"error": str(e), "field": "contract"})
     ms = round((time.perf_counter() - t0) * 1000)
     _log(f"sessions/{sid}.jsonl", {"t": time.time(), "agent_ms": ms, "request": req, "response": resp})
     _desk_update(sid, req, resp)
-    return JSONResponse(resp, headers={"X-Agent-Ms": str(ms)})
+    return resp
+
+
+@app.post("/v1/turn")
+async def turn(request: Request) -> JSONResponse:
+    req = await request.json()
+    t0 = time.perf_counter()
+    try:
+        resp = await agent_turn(req)
+    except AgentBadRequest as e:
+        return JSONResponse(e.body, status_code=400)
+    except (httpx.HTTPError, KeyError) as e:
+        # The app speaks its own canned line and keeps the last state (contract §9).
+        raise HTTPException(status_code=502, detail=f"agent unavailable: {type(e).__name__}")
+    return JSONResponse(resp, headers={"X-Agent-Ms": str(round((time.perf_counter() - t0) * 1000))})
+
+
+def _fillers() -> dict[str, list[str]]:
+    """Short acknowledgements from R's agent/lines.json (key 'filler' or 'fillers'), if R has added them."""
+    try:
+        lines = json.loads((ROOT / "agent" / "lines.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    f = lines.get("fillers") or lines.get("filler") or {}
+    return {k: (v if isinstance(v, list) else [v]) for k, v in f.items() if k in ("hi", "bn", "en") and v}
+
+
+@app.websocket("/ws/call")
+async def call_ws(ws: WebSocket, lang: str = "hi") -> None:
+    """Browser call: binary frames = 20 ms PCM16 16 kHz mic audio; text frames = JSON control messages."""
+    await ws.accept()
+    sid = f"call-{uuid.uuid4().hex[:12]}"
+    lock = asyncio.Lock()
+
+    async def send(msg: dict) -> None:
+        async with lock:
+            await ws.send_json(msg)
+
+    call = CallSession(sid, send, agent_turn, lang=lang if lang in ("hi", "bn", "en") else "hi", channel="web",
+                       hints=VOCAB, fillers=_fillers())
+    await send({"type": "connected", "session_id": sid, "stt": stt_mod.engine_name(), "agent": AGENT_URL or "mock"})
+    await call.start()
+    try:
+        while call.state != "ended":
+            m = await ws.receive()
+            if m["type"] == "websocket.disconnect":
+                break
+            if m.get("bytes"):
+                await call.on_audio(m["bytes"])
+            elif m.get("text"):
+                await call.on_message(json.loads(m["text"]))
+    except WebSocketDisconnect:
+        pass
+    finally:
+        if call.state != "ended":
+            call.state = "ended"  # caller dropped; nothing to say
+        _log("calls.jsonl", {"t": time.time(), "session_id": sid, "turns": call.turn, "metrics": call.metrics})
+        try:
+            await ws.close()
+        except RuntimeError:
+            pass
 
 
 def _desk_update(sid: str, req: dict, resp: dict) -> None:
@@ -155,6 +219,17 @@ async def metrics(request: Request) -> dict:
 @app.get("/")
 def index() -> FileResponse:
     return FileResponse(WEB / "index.html")
+
+
+@app.on_event("startup")
+async def _warm() -> None:
+    if os.environ.get("STT_WARMUP", "1") == "1":
+        asyncio.get_running_loop().run_in_executor(None, stt_mod.warm_up)
+
+
+@app.get("/call")
+def call_page() -> FileResponse:
+    return FileResponse(WEB / "call.html")
 
 
 @app.get("/desk")
