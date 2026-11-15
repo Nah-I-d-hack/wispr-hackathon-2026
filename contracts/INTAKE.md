@@ -1,6 +1,6 @@
 # C1: Intake contract (voice layer <-> intake agent)
 
-*[R] Draft v1.0 for K's review. Once merged this file is frozen: changes go through a `CONTRACT:` PR the other human
+*[R] v1.1 (additive over v1.0, for the call-like voice agent, #49).  v1.0 text below is unchanged except where marked 1.1. Originally: Draft v1.0 for K's review. Once merged this file is frozen: changes go through a `CONTRACT:` PR the other human
 approves. Examples in `contracts/examples/`.*
 
 ## 1. Who does what
@@ -45,6 +45,8 @@ breaks something and needs a `CONTRACT:` PR.
 | `state` | object or null | yes | the `state` from the previous TurnResponse, untouched; `null` on `start` |
 | `ui_lang_hint` | string or null | no | language the user picked on screen, if any (`hi`, `bn`, `en`). Wins over detection for the first agent reply |
 | `client` | object | no | `{"app": "k3-web", "version": "0.1"}`, for logs only |
+| `channel` | enum | no (1.1) | `web` (default, screen available), `phone_in` (user called in), `phone_out` (agent called the user). On `phone_*` the agent assumes no screen: nothing it says refers to one, and `display` is optional for K to use |
+| `context` | object or null | no (1.1) | on `start` only, mainly for `phone_out`: `{"patient_first_name": "Asha", "appointment": {"when": "2026-12-02 10:30", "where": "OPD 3"}, "reason": "pre-visit history"}`. All fields optional. The agent uses the name in its greeting and keeps `context` in `state`; never required |
 
 `transcript`:
 
@@ -102,6 +104,8 @@ breaks something and needs a `CONTRACT:` PR.
 | `kind` | enum | `free` (open description), `yes_no`, `choice`, `number`, `duration`, `none` (no answer expected, e.g. after `end`) |
 | `choices` | string[] | for `choice`, in `say.language` |
 | `patience` | enum | `normal` or `long`: `long` means wait longer before declaring `no_speech` (older users, open questions) |
+| `stt_hints` | string[] | (1.1) words or short phrases the user is likely to say next, for the speech engine's phrase/vocabulary hints (e.g. after "since when?": numbers and duration words; after the gas question: "pet", "seena", "pasina"). Romanised and native script mixed; K may pass them on or ignore them. Max 30 |
+| `fillers` | object[] | (1.1) short acknowledgement lines in the session language for K to play while waiting for the *next* response (`[{"text": ..., "text_roman": ...}]`, e.g. "haan ji", "theek hai, ek second"). K decides whether and when to play one; never during an escalation |
 
 `display`:
 
@@ -185,6 +189,8 @@ always wins over the normal flow. `no_speech` gets a gentle re-prompt; after 3 i
 | `message` | string | same text as `say.text` |
 | `call` | object or null | `{"number": "112", "label": "Emergency"}` (or `108` ambulance, `14416` Tele-MANAS). Shown as a big tappable button |
 | `reason_clinician` | string | English, for the summary card |
+| `transfer` | bool | (1.1) only on `phone_*` channels: true means K should, after playing `say`, offer or perform a bridge of the call to `call.number`. Always false on `web`. If the telephony side can't bridge, K just keeps the spoken message |
+| `calls` | object[] | (1.1) optional extra numbers after `call`, e.g. self-harm: `call` = 14416, `calls` = `[{"number": "112", "label": "Emergency"}]` |
 
 Rules both sides rely on:
 - The red-flag check is **rule-based and runs on every utterance even if the LLM call fails or times out**. An
@@ -239,3 +245,11 @@ Hindi. More languages are an additive change (1.x).
   usually null and the read-back carries more weight. K passes the agent's last `say.text` to Wispr as context.
 - Barge-in is a flag on the utterance (`transcript.barge_in`), not a separate event, so it costs one request, not two.
 - Client timeout 5 s; the app shows a "thinking" cue after about 1.2 s.
+
+## Changes in 1.1 (PR for #49, all additive)
+
+- Request: `channel` (`web` / `phone_in` / `phone_out`) and `context` on `start`.
+- Response: `expect.stt_hints`, `expect.fillers`, `escalation.transfer`, `escalation.calls`.
+- Agent behaviour on `phone_*`: lines written for listening only (short, one question per turn, no reference to a
+  screen, emergency numbers spoken digit by digit). `contract` stays `"1.0"`-compatible: a 1.0 client that ignores the
+  new fields keeps working, and the agent accepts `"1.0"` and `"1.1"`.
