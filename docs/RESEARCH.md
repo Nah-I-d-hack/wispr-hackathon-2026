@@ -93,11 +93,73 @@ expect) is a concrete, Wispr-specific idea, beyond simply calling the API.
 
 ## 5. What exists [K]
 
-*K's section.*
+Plenty of Indian health tech uses voice or sits near intake. None of it takes the history **from the patient, by
+voice, in their language, before the doctor**, with a red-flag check that alerts the desk. Bolo fits between
+registration and the doctor's own notes.
+
+| what | who it serves | what it does | where Bolo fits |
+|---|---|---|---|
+| **ABHA Scan & Share** (NHA, since Oct 2022) | patients at the registration counter | scan a QR to register in the OPD queue: **6.64 crore tokens at 17,481 facilities, about 2 lakh a day** (Nov 2024) | it stops at name and demographics. Bolo is the next step in the same queue: the same desk tablet, now with symptoms |
+| **Ambient AI scribes**: EkaScribe (Eka Care), chosen as NHA's partner for an ambient voice scribe; others built on Sarvam's speech models | doctors | listen to the doctor-patient conversation and write structured notes; Eka's Parrotlet v2 speech model claims code-mixed Hindi-English and Indian medicine names | they start once the doctor is talking to the patient. Bolo works **before** that, in the queue, and catches the case that shouldn't be waiting. The two are complementary: our intake could feed their record |
+| **Voice triage helplines** (hospital voice bots) | callers to a hospital | vendors describe Hindi-first triage flows adapted from the Manchester Triage System | vendor claims only, no public evaluation found. Our evaluation (R2/R3) and our "never diagnose" rule are where we differ |
+| **Jugalbandi** (Microsoft, IIT Madras, AI4Bharat) | rural citizens on WhatsApp | voice question → speech-to-text → translation → LLM → speech back, for 170+ government schemes | proves the Indian voice pipeline works at scale. It isn't health intake. **Bhashini** (whose models it uses) signed an MoU with NHA in 2026 to bring speech and translation into health apps |
+| **Kilkari** (MoHFW with ARMMAN) | pregnant women and mothers | free weekly voice messages by phone call (IVR); 11 million+ subscribers reported | one-way information, but it shows voice on a basic phone reaches women who are hard to reach by apps |
+| **Typed symptom checkers and general chatbots** | anyone with a smartphone and English | typed questions, ending in possible conditions | text and English first, and they name conditions. R3's plain-LLM baseline did so in 20 replies; Bolo never does |
+
+**For K2 (speech engines):** this list adds candidates beyond Wispr: Eka's Parrotlet (medical, code-mixed),
+Bhashini / AI4Bharat models, and Sarvam. The comparison should include at least one Indian medical model.
+
+Sources for this section: [ABHA Scan & Share, MoHFW press release](https://mohfw.gov.in/press-info/7908) and
+[4-crore milestone](https://mohfw.gov.in/press-info/7476) (official); [EkaScribe and NHA partnership](https://www.psuconnect.in/news/ekacare-selected-as-a-technology-partner-for-national-health-authority-ambient-ai-enabled-voice-scribe-solution-for-doctors),
+[Parrotlet v2](https://indiamedtoday.com/eka-care-launches-parrotlet-a-v2-for-real-time-indian-medical-transcription/)
+(trade press, company claims); [voice triage helpline](https://caller.digital/blog/voice-ai-hospital-clinical-triage-nurse-helpline-india-2026)
+(**vendor blog, weak**); [Jugalbandi, Microsoft](https://news.microsoft.com/source/asia/features/with-help-from-next-generation-ai-indian-villagers-gain-easier-access-to-government-services/);
+[Bhashini-NHA MoU](https://indiamedtoday.com/digital-india-bhashini-division-signs-mou-with-national-health-authority/);
+[Kilkari, ARMMAN](https://armman.org/kilkari/) (self-reported reach).
 
 ## 6. Voice and accessibility for older users [K]
 
-*K's section.*
+**Why voice, for older Indians in particular** (LASI Wave 1, 2017-18, people aged 60+, n = 31,902):
+- Only **39.6% are literate** (men 56.6%, **women 24.2%**; rural 30.0%, urban 62.5%), and **56.5% never went to
+  school**. A form, an app menu or a typed chatbot shuts most older patients out. Speaking doesn't.
+- **55.3%** report a diagnosed eye or vision condition (cataract 23.2%, refractive error 35.4%). Text on a screen
+  must be large, and nothing important can be text-only.
+- **9.6%** report a diagnosed hearing or ear problem, but only **0.7%** use a hearing aid. Spoken replies need
+  captions, a slower pace and an easy "say that again".
+- Only **5.7%** live alone. Most have family around, so a son or daughter speaking for them is the normal case,
+  not an edge case.
+
+**Why it's hard:**
+- **Speech recognition is worse on older voices.** In Vipperla et al.'s longitudinal study, word error rate was
+  47.8% for older voices vs 36.4% for younger adults on the same task, rising with age. Slower speech added
+  insertion errors. A 2025 clinical evaluation of current models (Whisper and others) on speakers 65+ still finds
+  high-error cases. So we can't assume a vendor's headline accuracy holds for our users. **K2 measures it on older
+  voices.**
+- **Older speakers pause more and longer**, so a fixed short end-of-speech timeout cuts them off. In-home studies of
+  older adults with voice assistants list pauses, repeats and slow speech as main causes of errors. Assistants that
+  can be interrupted feel more natural to them.
+
+**Design rules in the app (K3), and where each comes from:**
+
+| rule | in the app |
+|---|---|
+| no reading needed | one large mic button, hands-free turn-taking; every question is spoken |
+| nothing is speech-only either | large captions on every reply (20 px, Noto fonts for Devanagari and Bengali) |
+| don't cut people off | the turn ends after 1.2 s of silence, **1.8 s** when the agent expects a long answer (`expect.patience`); three silences end politely; tapping the mic ends a turn early |
+| let them interrupt | tapping while Bolo speaks stops it (barge-in), except for escalations, which always play in full at a slow pace |
+| check, don't assume | the read-back in their language before anything is final (agent) and a "what we understood" card |
+| family is welcome | caregiver speech is expected; the agent records who is speaking (`speaker.role`) |
+| don't rely on the patient to act | emergencies show a large call button **and** alert the desk view, so staff act even if the patient doesn't |
+
+**Still open (K2/K3):** text-to-speech voices that older listeners find clear in Hindi and Bengali (slow but natural,
+adjustable volume); the noisy OPD; whether the end-of-speech timing suits real older speakers. K2 will include
+recordings by older family members (with consent) and report error rates for them separately.
+
+Sources for this section: [LASI Wave 1 key indicators for the elderly, IIPS](https://www.iipsindia.ac.in/sites/default/files/other_files/LASI_W1_Elderly_India.pdf)
+(official survey, figures read from the factsheet table); [Vipperla et al., Interspeech 2008](https://www.cstr.inf.ed.ac.uk/downloads/publications/2008/vipperla_is08.pdf)
+(peer-reviewed, older systems); [ASR for older adults in the clinic, 2025](https://arxiv.org/abs/2508.08684)
+(preprint, Dutch); [older users and dialogue systems](https://arxiv.org/abs/1902.04393) (pauses and timeouts);
+[barge-in and older adults, CHI 2025](https://apex-group-hkust.netlify.app/publication/chi25-nature-conversation).
 
 ## 7. Sources [R]
 
