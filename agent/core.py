@@ -19,12 +19,13 @@ from pathlib import Path
 from . import llm, rules
 from .text import light, translit
 
-CONTRACT = "1.0"
+CONTRACT = "1.1"   # accepts any 1.x request; answers with the request's version (1.1 fields are additive)
 HERE = Path(__file__).resolve().parent
 LINES = json.loads((HERE / "lines.json").read_text(encoding="utf-8"))
 SCRIPT = {"hi": "Deva", "bn": "Beng", "en": "Latn"}
 LANGS = ("hi", "bn", "en")
 EVENTS = ("start", "utterance", "no_speech", "end")
+CHANNELS = ("web", "phone_in", "phone_out")
 IDIOM_ORDER = ["I_gas", "I_ghabrahat", "I_kamzori", "I_sunn", "I_chakkar", "I_saans_phoolna", "I_sugar", "I_jalan",
                "I_bp", "I_garmi_thand", "I_tension"]
 LLM_TIMEOUT = float(os.environ.get("AGENT_LLM_TIMEOUT", "3.0"))
@@ -189,7 +190,15 @@ def _merge_llm(state: dict, u: dict) -> None:
 _CC_FALLBACK = [("chest", "chest discomfort"), ("breathless", "breathlessness"), ("fever", "fever"),
                 ("belly_pain", "abdominal pain"), ("headache", "headache"), ("weakness", "weakness"),
                 ("cough", "cough"), ("vomiting", "vomiting"), ("diarrhoea", "loose motions"),
-                ("bleeding", "bleeding"), ("numb", "numbness"), ("rash", "rash")]
+                ("bleeding", "bleeding"), ("numb", "numbness"), ("rash", "rash"),
+                ("self_harm", "thoughts of self-harm"), ("seizure", "fits"), ("unconscious", "unresponsive"),
+                ("poison", "possible poisoning"), ("snakebite", "snakebite"), ("head_injury", "head injury"),
+                ("vomit_blood", "vomiting blood"), ("no_sleep", "not sleeping"), ("fall", "fall")]
+# when only an everyday phrase was heard, name the complaint after it (K's finding: 'matha ghorachhe' left it empty)
+_CC_IDIOM = {"I_chakkar": "dizziness", "I_gas": "gas", "I_ghabrahat": "uneasiness (ghabrahat)",
+             "I_kamzori": "weakness", "I_sunn": "numbness", "I_bp": "blood pressure concern",
+             "I_sugar": "sugar (diabetes) concern", "I_saans_phoolna": "breathlessness", "I_jalan": "burning",
+             "I_garmi_thand": "fever or cold", "I_tension": "stress"}
 
 
 def _apply_rules(state: dict, text: str) -> None:
@@ -217,15 +226,20 @@ def _apply_rules(state: dict, text: str) -> None:
     if "diabetic" in present and "diabetes" not in state["history"]["conditions"]["value"]:
         state["history"]["conditions"]["value"].append("diabetes")
         state["history"]["conditions"]["status"] = "heard"
+    if d:
+        st["duration_said"] = d[1]
     if not state["chief_complaint"]["value"]:
-        for sign, label in _CC_FALLBACK:
-            if sign in present:
-                state["chief_complaint"].update(value=label, said=text, status="heard")
-                state["symptoms"] = state["symptoms"] or [
-                    {"name": label, "said": text, "onset": None,
-                     "duration": rules._fmt_days(d[0]) if d else None, "severity": None, "location": None,
-                     "character": None, "pattern": None, "associated": [], "status": "heard"}]
-                break
+        idiom_now = [i for i in IDIOM_ORDER if i in rules.idioms(text)]
+        cands = [(s, lbl) for s, lbl in _CC_FALLBACK if s in present]
+        if not cands and idiom_now:
+            cands = [("idiom", _CC_IDIOM[idiom_now[0]])]
+        if cands:
+            label = cands[0][1]
+            state["chief_complaint"].update(value=label, said=text, status="heard")
+            state["symptoms"] = state["symptoms"] or [
+                {"name": label, "said": text, "onset": None,
+                 "duration": rules._fmt_days(d[0]) if d else None, "severity": None, "location": None,
+                 "character": None, "pattern": None, "associated": [], "status": "heard"}]
 
 
 def _ctx(state: dict) -> rules.Ctx:
@@ -270,15 +284,23 @@ def _clinician_summary(state: dict, flags: list[dict]) -> str | None:
     return " ".join(parts)
 
 
-def _fallback_readback(state: dict) -> str:
+_AGE_WORD = {"hi": "{n} saal", "bn": "{n} bochhor", "en": "{n} years old"}
+
+
+def _fallback_readback(state: dict, lang: str) -> str:
+    """Rules-only read-back built from the patient's own words (no English normalisation mixed in)."""
     bits = []
     cc = state["chief_complaint"]
-    if cc["value"]:
-        bits.append(cc["said"] or cc["value"])
-    if state["symptoms"] and state["symptoms"][0].get("duration"):
-        bits.append(state["symptoms"][0]["duration"])
+    said = cc["said"] or ""
+    if said:
+        bits.append(said)
+    elif cc["value"]:
+        bits.append(cc["value"])
+    dur = state["_internal"].get("duration_said")
+    if dur and dur not in light(said):
+        bits.append(dur)
     if state["patient"]["age_years"] is not None:
-        bits.append(f"{state['patient']['age_years']}")
+        bits.append(_AGE_WORD[lang].format(n=state["patient"]["age_years"]))
     return ", ".join(bits) or "-"
 
 
@@ -290,6 +312,47 @@ def _safe_summary(summary: str | None, state: dict) -> str | None:
         if m.group(0) not in said:
             return None
     return summary
+
+
+def _spell_numbers(s: str) -> str:
+    return re.sub(r"\b(112|108|14416)\b", lambda m: " ".join(m.group(1)), s)
+
+
+# words the user is likely to say next, per question (C1 1.1 expect.stt_hints); romanised, the engine may also get
+# the native-script idiom phrases from K's vocabulary
+_HINTS = {
+    "q_duration": {"hi": ["din", "hafte", "mahine", "saal", "kal se", "aaj subah", "ek", "do", "teen", "chaar",
+                          "paanch"],
+                   "bn": ["din", "mash", "bochhor", "kal theke", "aaj sokal", "ek", "dui", "tin", "char", "panch"],
+                   "en": ["days", "weeks", "months", "since yesterday", "this morning", "two", "three", "four"]},
+    "q_age": {"hi": ["saal", "umar", "chaalis", "pachaas", "saath", "sattar", "assi"],
+              "bn": ["boyosh", "bochhor", "chollish", "ponchash", "shat", "sottor", "ashi"],
+              "en": ["years old", "forty", "fifty", "sixty", "seventy", "eighty"]},
+    "q_conditions": {"hi": ["sugar", "BP", "dil ki bimari", "dama", "thyroid", "koi nahi"],
+                     "bn": ["sugar", "pressure", "hriday", "hapani", "thyroid", "kichhu nei"],
+                     "en": ["diabetes", "blood pressure", "heart disease", "asthma", "thyroid", "none"]},
+    "q_medicines": {"hi": ["dawai", "goli", "metformin", "insulin", "amlodipine", "koi nahi"],
+                    "bn": ["oshudh", "metformin", "insulin", "amlodipine", "kichhu na"],
+                    "en": ["tablets", "metformin", "insulin", "amlodipine", "none"]},
+    "readback": {"hi": ["haan", "sahi hai", "nahi", "galat"], "bn": ["hya", "thik", "na", "bhul"],
+                 "en": ["yes", "that's right", "no", "wrong"]},
+}
+_IDIOM_HINTS = {"d_I_gas": ["pet", "seena", "chhati", "buk", "pasina", "ghaam", "saans", "shash", "haath", "jabda"],
+                "d_I_ghabrahat": ["dar", "chinta", "dhadkan", "dhorphor", "ulti", "seene mein dabav"],
+                "d_I_chakkar": ["kamra ghoomta", "gir jayenge", "achanak", "hothat", "seedha chal"],
+                "d_I_kamzori": ["poore sharir", "ek taraf", "ek haath", "ek pair", "achanak", "hothat"],
+                "d_I_sunn": ["ek taraf", "achanak", "chehra", "muh tedha", "bolne mein"],
+                "d_I_bp": ["naapa", "kitna", "chakkar", "sir dard"], "d_I_sugar": ["sugar", "pasina", "kaanp"],
+                "d_I_saans_phoolna": ["baithe baithe", "poora vaakya", "nayi"],
+                "d_I_jalan": ["peshab", "pet", "seena", "twacha"], "d_I_garmi_thand": ["bukhar", "jor", "naapa"],
+                "d_I_tension": ["neend", "khana", "khayal"]}
+
+
+def _stt_hints(key: str | None, lang: str) -> list[str]:
+    k = "q_age" if key and key.startswith("q_age") else key
+    if k in _HINTS:
+        return _HINTS[k][lang][:30]
+    return _IDIOM_HINTS.get(k or "", [])[:30]
 
 
 # ---------------------------------------------------------------- policy
@@ -344,8 +407,18 @@ def turn(req: dict) -> dict:
     new_flags: list[dict] = []
     escalation = None
 
+    channel = req.get("channel") if req.get("channel") in CHANNELS else st.get("channel", "web")
+    st["channel"] = channel
+    phone = channel.startswith("phone")
     if ev == "start":
-        key = "greet"
+        ctx = req.get("context") if isinstance(req.get("context"), dict) else None
+        st["context"] = ctx
+        name = (ctx or {}).get("patient_first_name")
+        if channel == "phone_out" and name:
+            key, kw = "greet_phone_named", {"name": str(name)[:40]}
+            kw_roman = None
+        else:
+            key = "greet_phone" if phone else "greet"
         st["asked"].append("q_open")
     elif ev == "no_speech":
         state["no_speech_count"] += 1
@@ -446,14 +519,16 @@ def turn(req: dict) -> dict:
                         key = "q_age_other" if state["speaker"]["role"] == "caregiver" else "q_age_self"
                     st["asked"].append(q)
             if action == "confirm":
-                kw = {"s": st.get("summary_patient") or _fallback_readback(state)}
+                kw = {"s": st.get("summary_patient") or _fallback_readback(state, lang)}
                 kw_roman = st.get("summary_patient_roman") if st.get("summary_patient") else kw["s"]
 
     if state["phase"] == "escalated" and action == "ask" and not new_flags:
         state["phase"] = "collecting"
     text_out, roman_out = _line(key, lang, **kw)
-    if kw:
+    if "s" in kw:
         roman_out = _line(key, lang, s=kw_roman or "")[1]
+    elif "name" in kw:
+        roman_out = _line(key, lang, name=kw["name"])[1]
     if prefix:
         text_out, roman_out = prefix[0] + " " + text_out, prefix[1] + " " + roman_out
     if escalation:
@@ -467,6 +542,14 @@ def turn(req: dict) -> dict:
                 text_out, roman_out = text_out + " " + qt, roman_out + " " + qr
                 st["asked"].append(q)
                 key = q
+    if phone:  # listening only: say emergency numbers digit by digit ("1 1 2")
+        text_out = _spell_numbers(text_out)
+        if escalation:
+            escalation["message"] = _spell_numbers(escalation["message"])
+    if escalation:
+        escalation["transfer"] = bool(phone and escalation["level"] == "emergency")
+        escalation["calls"] = [{"number": "112", "label": "Emergency"}] if (escalation.get("call") or {}).get(
+            "number") == "14416" else []
     st["pending"] = key if key in LINES else None
     state["transcript_log"].append({"turn": req["turn"], "who": "agent", "text": roman_out, "language": lang})
     if len(state["transcript_log"]) > 40:
@@ -496,12 +579,16 @@ def turn(req: dict) -> dict:
     debug["latency_ms"] = round((time.perf_counter() - t0) * 1000) - int(debug.get("wait_ms") or 0)
     debug["rules_signs"] = st["signs"]
     return {
-        "contract": CONTRACT, "session_id": req["session_id"], "turn": req["turn"], "action": action,
+        "contract": "1.1" if str(req.get("contract")).startswith("1.1") else "1.0",
+        "session_id": req["session_id"], "turn": req["turn"], "action": action,
         "say": {"text": text_out, "language": lang, "script": SCRIPT[lang], "text_roman": roman_out,
                 "register": "respectful", "pace": "slow" if (action == "escalate" or older or st["slow"]) else
                 "normal", "interruptible": action != "escalate"},
         "expect": {"kind": exp_kind, "choices": [], "patience": "long" if (older or st["slow"] or
-                                                                          exp_kind == "free") else "normal"},
+                                                                          exp_kind == "free") else "normal",
+                   "stt_hints": [] if action == "done" else _stt_hints(key, lang),
+                   "fillers": [] if action in ("done", "escalate") else
+                   [dict(zip(("text", "text_roman"), _line(f"filler_{i}", lang))) for i in (1, 2, 3)]},
         "state": state,
         "red_flags": flags,
         "escalation": escalation,

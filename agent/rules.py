@@ -19,7 +19,7 @@ LEX: dict[str, list[str]] = {
               "jakad"],
     "sweating": ["pasina", "paseena", "pasine", "ghaam", "gham", "ghamchhe", "ghamche", "ghame", "ghamte", "sweat",
                  "sweating", "sweaty"],
-    "breathless": ["saans phool", "saans phul", "saans lene", "saans ki takleef", "saans nahi", "shash", "shwas",
+    "breathless": ["saans phool", "saans phul", "saans * phool", "saans * phul", "saans lene", "saans ki takleef", "saans nahi", "shash", "shwas",
                    "swas", "hapani", "haanf", "breathless", "short of breath", "breathing", "breathe", "dum ghut",
                    "hanpan"],
     "breath_severe": ["saans nahi aa", "saans nahi le", "can't breathe", "cannot breathe", "dum ghut",
@@ -54,7 +54,7 @@ LEX: dict[str, list[str]] = {
                     "not responding", "jaag nahi", "sara dichhe na", "sara dey na", "unresponsive"],
     "seizure": ["jhatke", "jhatka", "dant lag", "mirgi", "khichuni", "fit", "fits", "seizure", "convulsion",
                 "ainthan"],
-    "fever": ["bukhar", "bukhaar", "jor", "jwar", "fever", "temperature", "taap", "tap"],
+    "fever": ["bukhar", "bukhaar", "bukar", "jor", "jwar", "jbor", "jbar", "fever", "temperature", "taap", "tap"],
     "stiff_neck": ["gardan akad", "gardan jakad", "gardan akadi", "ghaar shokto", "ghar shokto", "stiff neck",
                    "neck is stiff", "neck stiff"],
     "confusion": ["samajh nahi aa", "kuch samajh nahi", "confus", "confused", "confusion", "behki", "ulta seedha bol",
@@ -108,7 +108,7 @@ LEX: dict[str, list[str]] = {
     "older": ["dadi", "dada", "dadaji", "daadi", "nani", "nana", "nanaji", "budhe", "buzurg", "thakuma",
               "thakurda", "dida", "dadu", "grandmother", "grandfather", "grandma", "grandpa", "elderly"],
     "leg": ["pair", "pairon", "paon", "paa", "leg", "paye", "pao"],
-    "swelling": ["sujan", "sooj", "swollen", "swelling", "phula", "phool", "phule", "fula", "phool gaya"],
+    "swelling": ["sujan", "sooj", "swollen", "swelling", "phula", "phule", "fula", "phool gaya"],
     "blood_urine": ["peshab mein khoon", "pishab mein khoon", "prosrabe rokto", "prosraber sathe rokto",
                     "blood in urine", "blood in my urine", "urine mein khoon"],
     "blood_stool": ["potty mein khoon", "latrine mein khoon", "paikhanay rokto", "blood in stool", "mal mein khoon"],
@@ -131,13 +131,13 @@ LEX: dict[str, list[str]] = {
 IDIOMS: dict[str, list[str]] = {
     "I_gas": ["gas"],
     "I_ghabrahat": ["ghabrahat", "ghabra", "jee ghabra", "dil ghabra", "buk dhorphor", "dhorphor", "ghabrano"],
-    "I_chakkar": ["chakkar", "sir ghoom", "sar ghoom", "matha ghor", "matha ghur", "matha ghurchhe", "ghurchhe",
+    "I_chakkar": ["chakkar", "sir ghoom", "sar ghoom", "matha ghora", "matha ghura", "matha ghurchhe", "ghurchhe",
                   "dizzy", "dizziness", "giddy"],
     "I_kamzori": ["kamzori", "kamjori", "thakaan", "durbol", "jaan nahi"],
     "I_sunn": ["sunn", "jhunjhuni", "jhin jhin", "jhinjhin", "obosh"],
     "I_bp": ["bp", "blood pressure", "pressure er", "pressure ki", "pressure low", "pressure high"],
     "I_sugar": ["sugar", "madhumeh"],
-    "I_saans_phoolna": ["saans phool", "saans phul", "haanf", "hapani"],
+    "I_saans_phoolna": ["saans phool", "saans phul", "saans * phool", "saans * phul", "haanf", "hapani"],
     "I_jalan": ["jalan", "jwala", "jala", "jalchhe", "jala kore", "burning"],
     "I_garmi_thand": ["garmi chadh", "garmi lag", "thanda lag", "thanda lege", "thanda laga", "sardi"],
     "I_tension": ["tension", "dimaag kharab", "mann nahi lagta", "man nahi lagta", "mon kharap", "chinta", "stress"],
@@ -150,25 +150,38 @@ _NEG = {"nahi", "nahin", "nai", "na", "nei", "nay", "no", "not", "never", "nope"
 
 # words matched as prefixes (sweat -> sweating, sweaty); everything else must match a whole word
 _PREFIX = {"sweat", "confus", "vomit", "faint", "numb", "tingl", "bleed", "swell", "weak", "breath", "ghabra",
-           "jhunjhun", "drows", "ghamch"}
+           "jhunjhun", "drows", "ghamch", "ghora", "ghura"}
+# words whose fuzzy skeleton collides with a common word (buker = chest vs bukhar = fever): match the spelling exactly
+_EXACT = {"buker", "bukhar", "bukhaar", "bukar", "bukhaara"}
 
 
 def _compile(phrase: str) -> list[str]:
-    """'*' = gap of up to 3 words; words in _PREFIX match as prefixes."""
-    return [("*" if w == "*" else skeleton_word(w) + ("~" if w in _PREFIX else "")) for w in light(phrase).split()]
+    """'*' = gap of up to 3 words. Words in _PREFIX match as spelled prefixes ('~weak' matches 'weakness' but not
+    'bukhar', whose skeleton happens to start like weak's); words in _EXACT match their spelling; the rest match on
+    fuzzy skeletons."""
+    out = []
+    for w in light(phrase).split():
+        sk = skeleton_word(w)
+        # short skeletons collide too easily (weak = buk, feel = fall): those words match their spelling only
+        exact = w in _EXACT or (len(sk) <= 3 and not sk.isdigit())
+        out.append("*" if w == "*" else "~" + w if w in _PREFIX else "=" + w if exact else sk)
+    return out
 
 
 _LEX_C = {k: [_compile(p) for p in v] for k, v in LEX.items()}
 _IDIOM_C = {k: [_compile(p) for p in v] for k, v in IDIOMS.items()}
 
 
-def _tok_eq(p: str, t: str) -> bool:
-    if p.endswith("~"):
-        return t.startswith(p[:-1])
-    return t == p
+def _tok_eq(p: str, t: tuple[str, str]) -> bool:
+    skel, raw = t
+    if p.startswith("~"):
+        return raw.startswith(p[1:])
+    if p.startswith("="):
+        return raw == p[1:]
+    return skel == p
 
 
-def _find(pattern: list[str], toks: list[str]) -> tuple[int, int] | None:
+def _find(pattern: list[str], toks: list[tuple[str, str]]) -> tuple[int, int] | None:
     """Return (start, end) of the first match of pattern in toks; '*' matches 0..3 tokens."""
     def rec(pi: int, ti: int) -> int | None:
         if pi == len(pattern):
@@ -199,7 +212,7 @@ def match_concepts(text: str, lex: dict[str, list[list[str]]]) -> tuple[set[str]
     negated: set[str] = set()
     for cl in clauses(text):
         words = [w for w in re.split(r"[\s\-/]+", cl) if w]
-        toks = [skeleton_word(w) for w in words]
+        toks = [(skeleton_word(w), re.sub(r"[^a-z0-9']", "", w)) for w in words]
         for concept, pats in lex.items():
             for p in pats:
                 m = _find(p, toks)
