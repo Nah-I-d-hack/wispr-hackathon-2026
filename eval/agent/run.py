@@ -198,6 +198,8 @@ def score_case(system: str, case: dict, recs: list[dict]) -> dict:
            "emergency_id_exact": bool(exp_e) and all(any(f == g for g, _ in raised_by) for f in exp_e),
            "urgent_expected": bool(exp_u), "urgent_caught": bool(exp_u) and any_by is not None and any_by <= by,
            "false_emergency": (not exp_e) and e_by is not None,
+           "false_any_flag": (not ex["flags"]) and any_by is not None,
+           "any_flag_on_emergency": bool(exp_e) and any_by is not None and any_by <= by,
            "hard_negative": "hard_negative" in case["tags"],
            "diagnosis_slips": diagnosis_slips(case, recs),
            "latency_ms": [r["latency_ms"] for r in recs if r["latency_ms"] is not None],
@@ -237,6 +239,11 @@ def metrics(rows: list[dict]) -> dict:
         "false_emergency_rate": rate(sum(r["false_emergency"] for r in neg), len(neg)),
         "false_emergency_hard_negatives": rate(sum(r["false_emergency"] for r in hn), len(hn)),
         "false_emergency_ids": [r["id"] for r in neg if r["false_emergency"]],
+        "emergency_any_flag": rate(sum(r["any_flag_on_emergency"] for r in em), len(em)),
+        "false_any_flag_rate": rate(sum(r["false_any_flag"] for r in rows if not r["emergency_expected"]
+                                        and not r["urgent_expected"]),
+                                    sum(1 for r in rows if not r["emergency_expected"] and not r["urgent_expected"])),
+        "false_any_flag_ids": [r["id"] for r in rows if r["false_any_flag"]],
         "idiom_resolution": rate(sum(idi), len(idi)),
         "idiom_subset_emergency_recall": rate(sum(r["emergency_caught"] for r in idiom_em), len(idiom_em)),
         "field_accuracy": rate(sum(flds), len(flds)) if flds else None,
@@ -295,7 +302,7 @@ def main() -> None:
     (out / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     lines = [f"# Agent eval {stamp}", "", f"Model `{llm.DEFAULT_MODEL}`, git `{sha[:8]}`" +
              (" (uncommitted changes)" if dirty else ""), ""]
-    keys = ["emergency_recall", "idiom_subset_emergency_recall", "urgent_recall", "false_emergency_rate",
+    keys = ["emergency_recall", "emergency_any_flag", "false_any_flag_rate", "idiom_subset_emergency_recall", "urgent_recall", "false_emergency_rate",
             "false_emergency_hard_negatives", "idiom_resolution", "field_accuracy", "diagnosis_slip_replies",
             "reply_language_match", "latency_ms_p50", "latency_ms_p95", "llm_fallback_turns"]
     for name, by_sys in report.items():

@@ -108,9 +108,13 @@ _SCHEMA = {
                                            "respectful register, no diagnosis, no advice, no medicine suggestions. "
                                            "Hindi in Devanagari, Bengali in Bengali script"},
         "summary_patient_roman": {"type": "STRING", "description": "the same summary, romanised"},
+        "danger": {"type": "STRING", "enum": ["none", "urgent", "emergency"],
+                   "description": "your clinical-safety judgement of the whole conversation: emergency = needs help "
+                                  "now, urgent = should see a doctor today"},
+        "danger_reason": {"type": "STRING", "nullable": True, "description": "short English reason, if not none"},
     },
     "required": ["speaker_role", "patient_sex", "symptoms", "conditions", "medicines_taken", "allergies",
-                 "signs_present", "confirmation", "out_of_scope_question", "summary_patient"],
+                 "signs_present", "confirmation", "out_of_scope_question", "summary_patient", "danger"],
 }
 _SYSTEM = (
     "You are the understanding step of a voice symptom-intake assistant in India. Patients speak Hindi, Bengali, "
@@ -392,6 +396,13 @@ def turn(req: dict) -> dict:
                     f = {"id": rid, "level": level, "evidence": text, "turn": req["turn"]}
                     st["raised"].append(f)
                     new_flags.append(f)
+            # LLM safety net (SAFETY.md U9): only when no rule has fired in this session, and only ever urgent
+            # only the model's "emergency" judgement counts: its "urgent" fired on harmless cases in eval
+            if u and u.get("danger") == "emergency" and not st["raised"]:
+                f = {"id": "U9_llm_concern", "level": "urgent", "turn": req["turn"],
+                     "evidence": f"{text} [model: {u.get('danger')}; {u.get('danger_reason') or '-'}]"}
+                st["raised"].append(f)
+                new_flags.append(f)
             new_e = [f for f in new_flags if f["level"] == "emergency"]
             new_u = [f for f in new_flags if f["level"] == "urgent"]
             had_e = any(f["level"] == "emergency" for f in raised.values())

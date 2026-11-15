@@ -38,13 +38,17 @@ LEX: dict[str, list[str]] = {
     "weakness": ["kamzori", "kamjori", "weak", "weakness", "jaan nahi", "durbol", "taqat nahi", "takat nahi"],
     "numb": ["sunn", "jhunjhuni", "jhin jhin", "jhinjhin", "obosh", "numb", "numbness", "tingling"],
     "face_droop": ["muh * tedha", "munh * tedha", "chehra * tedha", "mukh benke", "mukh beke", "mukh ta * benke",
-                   "face droop", "face is drooping", "muh latak", "drooping"],
+                   "face droop", "face is drooping", "muh latak", "drooping", "crooked", "lopsided",
+                   "face * one side", "muh * ek taraf", "mukh * benke", "mukh * beke", "chehra * latak"],
+    "arm_cant_lift": ["can't lift", "cannot lift", "can't raise", "haath utha nahi", "haath nahi utha",
+                      "haat tulte parchhe na", "haat uthchhe na"],
     "speech_slurred": ["bol nahi pa", "jaban ladkha", "zubaan ladkha", "kotha jodiye", "slurred", "speak properly",
                        "can't speak", "cannot speak", "bolne mein dikkat", "kotha bolte parchhe na"],
     "vision": ["dikh nahi", "dikhna band", "dhundhla", "andhera", "chokhe dekhte", "can't see", "cannot see",
-               "vision", "blurred", "blurry", "aankh se dikh"],
+               "vision", "blurred", "blurry", "aankh se dikh", "jhapsa", "jhapsha", "jhaapsa",
+               "dekhte parchhi na"],
     "imbalance": ["seedha chal nahi", "sidha chal nahi", "chal nahi pa", "balance", "ladkhada", "can't walk straight",
-                  "sojha hatte", "tal samlate"],
+                  "sojha hatte", "tal samlate", "hata jachhe na", "hatte parchhi na", "can't walk properly"],
     "sudden": ["achanak", "ekdum", "hothat", "hathat", "sudden", "suddenly", "in a second", "abhi abhi"],
     "unconscious": ["behosh", "hosh nahi", "hosh mein nahi", "ogyan", "ojnan", "agyan", "unconscious",
                     "not responding", "jaag nahi", "sara dichhe na", "sara dey na", "unresponsive"],
@@ -341,7 +345,7 @@ def evaluate(c: Ctx) -> list[tuple[str, str]]:
     if chest and (has("sweating", "breathless", "radiation", "fainting", "vomiting")
                   or (has("heavy", "sudden") and risk)):
         e("E1_chest_cardiac")
-    if has("face_droop", "speech_slurred") or ("one_side" in s and has("weakness", "numb")) or \
+    if has("face_droop", "speech_slurred", "arm_cant_lift") or ("one_side" in s and has("weakness", "numb")) or \
             ("sudden" in s and has("vision", "imbalance")):
         e("E2_stroke")
     if "breath_severe" in s or ("breathless" in s and "severe" in s and "speech_slurred" in s):
