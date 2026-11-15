@@ -14,7 +14,7 @@ HERE = Path(__file__).resolve().parent
 SYSTEM = ("You convert romanised Hindi or Bengali into correct native script (Devanagari for Hindi, Bengali script "
           "for Bengali). Keep the exact wording and meaning; do not translate, add or drop words. Keep numbers like "
           "112 and 14416 as digits, keep English words commonly used in the language (doctor, BP, sugar, "
-          "appointment) in native script as people write them, and keep the {s} placeholder exactly as {s}.")
+          "appointment) in native script as people write them, and keep the {s} and {name} placeholders exactly as written.")
 
 
 def main() -> None:
@@ -36,8 +36,9 @@ def main() -> None:
         if todo:
             raise SystemExit(f"{lang}: missing keys {todo}")
         for k in keys:
-            if "{s}" in src[k][lang] and "{s}" not in res[k]:
-                raise SystemExit(f"{lang}/{k}: placeholder lost")
+            for ph in ("{s}", "{name}"):
+                if ph in src[k][lang] and ph not in res[k]:
+                    raise SystemExit(f"{lang}/{k}: placeholder {ph} lost")
             out.setdefault(k, {"en": src[k]["en"]})
             out[k][lang] = res[k]
             out[k][f"{lang}_roman"] = src[k][lang]
