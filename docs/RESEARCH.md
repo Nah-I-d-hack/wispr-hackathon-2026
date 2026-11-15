@@ -65,6 +65,8 @@ phone; our agent is channel-independent, so that's a new voice adapter, not a re
 
 ## 4. Wispr fit: what the Flow API gives us and where it falls short [R]
 
+**Status (15 Nov):** using Wispr inside the product is **optional**: the event requires Wispr Flow only for building (DECISIONS.md, 15 Nov). The API isn't public (only some organisations have access); on Discord the organisers said that if teams are expected to use it, access is free. K2 compares it with other speech engines. The analysis below still applies if Wispr is chosen, and the agent-side hints (`expect.stt_hints`) work with most engines that accept phrase hints.
+
 From Wispr's API docs (api-docs.wisprflow.ai, read 15 Nov 2026):
 
 | capability | what the docs say | what it means for Bolo |
@@ -76,7 +78,7 @@ From Wispr's API docs (api-docs.wisprflow.ai, read 15 Nov 2026):
 | `context.conversation` | chat-style history: `messages` with `role` + `content` | K passes the agent's last question, so short answers ("teen din se") are read in context |
 | `context.dictionary_context` | "uncommon names or words relevant to the context that might be mentioned" | **the agent can supply these**: medicine names, the idioms it is asking about ("chakkar", "ghabrahat"), the options it just offered. Proposed as C1 v1.1 `expect.stt_hints` |
 | `context.app.type` | `email`, `ai` or `other`, used to adjust writing style | `ai` or `other`: we don't want email-style rewriting of a patient's words |
-| Pricing | usage-based tokens, credits then monthly billing; no free tier or rate limits documented | we need a key and credits from the hackathon or Kanishk's account (asked on Discord) |
+| Pricing | usage-based tokens, credits then monthly billing; no free tier or rate limits documented | API not public; organisers: free access if teams are expected to use it (Discord, 15 Nov) |
 
 **Risks to test in K2** (none of these are documented either way):
 - **Clean-up vs the patient's words.** Flow is built for dictation, so it formats and tidies speech. For intake, the
