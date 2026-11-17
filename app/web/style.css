@@ -53,6 +53,8 @@ main { flex: 1; padding: 0 16px 16px; display: flex; flex-direction: column; gap
 .call { background: var(--danger); color: #fff; text-decoration: none; font-weight: 700; font-size: 24px;
   padding: 12px 20px; border-radius: 999px; min-height: 56px; display: inline-flex; align-items: center; gap: 8px; }
 
+.call.secondary { background: transparent; color: var(--danger); border: 2px solid var(--danger); font-size: 20px; }
+
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; }
 .card h2 { font-size: 16px; margin: 0 0 8px; color: var(--muted); font-weight: 600; }
 .card dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 6px 12px; }

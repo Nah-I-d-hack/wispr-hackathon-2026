@@ -7,11 +7,18 @@
 Every request/response pair is appended to outputs/sessions/<session_id>.jsonl (contract §11), so a session can be
 replayed through the real agent later. Timing from the browser (end of speech -> reply audio starts) goes to
 outputs/metrics.jsonl.
+
+Speech-to-text: with WISPR_API_KEY in .env the app records audio and posts it to /api/stt, which converts it to
+16 kHz PCM16 WAV (ffmpeg) and calls Wispr Flow with the symptom vocabulary (voice/vocab.py) and the agent's last
+question as context. Without a key, /v1/health says stt=browser and the app uses the browser's own recognition.
+The desk view (/desk.html) shows live sessions, emergencies first ("flags the desk").
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import os
+import subprocess
 import time
 from pathlib import Path
 
@@ -19,6 +26,8 @@ import httpx
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+
+from voice import vocab, wispr
 
 from . import mock_agent
 
@@ -29,6 +38,9 @@ AGENT_URL = os.environ.get("AGENT_URL", "").rstrip("/")
 AGENT_TIMEOUT_S = float(os.environ.get("AGENT_TIMEOUT_S", "5"))
 
 app = FastAPI(title="voice intake (K3)")
+LANG_HINTS = {"hi": ["hi", "en"], "bn": ["bn", "en"], "en": ["en", "hi", "bn"]}
+VOCAB = vocab.symptom_phrases()
+DESK: dict[str, dict] = {}  # session_id -> latest summary for the desk view (in memory; demo scale)
 
 
 def _log(name: str, row: dict) -> None:
@@ -40,7 +52,8 @@ def _log(name: str, row: dict) -> None:
 
 @app.get("/v1/health")
 def health() -> dict:
-    return {"ok": True, "contract": mock_agent.CONTRACT, "agent": AGENT_URL or "mock"}
+    return {"ok": True, "contract": mock_agent.CONTRACT, "agent": AGENT_URL or "mock",
+            "stt": "wispr" if wispr.available() else "browser"}
 
 
 @app.post("/v1/turn")
@@ -65,7 +78,71 @@ async def turn(request: Request) -> JSONResponse:
         raise HTTPException(status_code=502, detail=f"agent unavailable: {type(e).__name__}")
     ms = round((time.perf_counter() - t0) * 1000)
     _log(f"sessions/{sid}.jsonl", {"t": time.time(), "agent_ms": ms, "request": req, "response": resp})
+    _desk_update(sid, req, resp)
     return JSONResponse(resp, headers={"X-Agent-Ms": str(ms)})
+
+
+def _desk_update(sid: str, req: dict, resp: dict) -> None:
+    st = resp.get("state") or {}
+    flags = resp.get("red_flags") or []
+    prev = DESK.get(sid, {})
+    esc = resp.get("escalation") or prev.get("escalation")
+    DESK[sid] = {
+        "session_id": sid, "updated": time.time(), "started": prev.get("started", time.time()),
+        "turns": resp.get("turn", 0), "action": resp.get("action"), "phase": st.get("phase"),
+        "lang": (st.get("lang") or {}).get("reply"), "complaint": (st.get("chief_complaint") or {}).get("said"),
+        "speaker": (st.get("speaker") or {}).get("role"), "red_flags": flags,
+        "level": "emergency" if any(f.get("level") == "emergency" for f in flags) else
+                 ("urgent" if flags else None),
+        "escalation": esc, "summary": (resp.get("display") or {}).get("summary_clinician"),
+        "acknowledged": prev.get("acknowledged", False) and not (resp.get("escalation") and not prev.get("escalation")),
+    }
+
+
+@app.get("/api/desk")
+def desk() -> dict:
+    rank = {"emergency": 0, "urgent": 1, None: 2}
+    rows = sorted(DESK.values(), key=lambda d: (rank[d["level"]], d["acknowledged"], -d["updated"]))
+    return {"sessions": rows[:50], "now": time.time()}
+
+
+@app.post("/api/desk/{sid}/ack")
+def desk_ack(sid: str) -> dict:
+    if sid not in DESK:
+        raise HTTPException(404, "unknown session")
+    DESK[sid]["acknowledged"] = True
+    return {"ok": True}
+
+
+def to_wav16k(audio: bytes) -> bytes:
+    """Any browser recording (webm/opus, ogg, mp4, wav) -> 16 kHz mono PCM16 WAV, as Wispr expects."""
+    r = subprocess.run(["ffmpeg", "-loglevel", "error", "-i", "pipe:0", "-ac", "1", "-ar", "16000",
+                        "-acodec", "pcm_s16le", "-f", "wav", "pipe:1"], input=audio, capture_output=True, timeout=20)
+    if r.returncode != 0 or len(r.stdout) <= 44:
+        raise ValueError("could not decode audio")
+    return r.stdout
+
+
+@app.post("/api/stt")
+async def stt(request: Request, lang: str = "hi", prompt: str = "") -> JSONResponse:
+    if not wispr.available():
+        return JSONResponse({"error": "no WISPR_API_KEY; use browser speech recognition"}, status_code=503)
+    audio = await request.body()
+    if not audio or len(audio) > 20_000_000:
+        return JSONResponse({"error": "empty or too large"}, status_code=400)
+    try:
+        wav = await asyncio.to_thread(to_wav16k, audio)
+    except (ValueError, subprocess.TimeoutExpired) as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    convo = [{"role": "assistant", "content": prompt[:500]}] if prompt else None
+    try:
+        out = await asyncio.to_thread(wispr.transcribe, wav, LANG_HINTS.get(lang, []), VOCAB, convo)
+    except Exception as e:  # network, auth, quota: the app falls back to browser STT
+        return JSONResponse({"error": f"wispr failed: {type(e).__name__}"}, status_code=502)
+    out["duration_ms"] = round((len(wav) - 44) / 32)  # 16 kHz * 2 bytes = 32 bytes per ms
+    out.pop("raw", None)
+    _log("stt.jsonl", {"t": time.time(), "lang_hint": lang, **out})
+    return JSONResponse(out)
 
 
 @app.post("/api/metrics")
@@ -78,6 +155,11 @@ async def metrics(request: Request) -> dict:
 @app.get("/")
 def index() -> FileResponse:
     return FileResponse(WEB / "index.html")
+
+
+@app.get("/desk")
+def desk_page() -> FileResponse:
+    return FileResponse(WEB / "desk.html")
 
 
 app.mount("/", StaticFiles(directory=WEB), name="web")
