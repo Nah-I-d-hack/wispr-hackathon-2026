@@ -491,7 +491,7 @@ def turn(req: dict) -> dict:
                               "reason_clinician": "; ".join(f["id"] for f in (new_e or new_u))}
             elif state["phase"] == "confirming":
                 conf = (u or {}).get("confirmation", "none")
-                yes = conf == "yes" or (not u and re.search(r"\b(haan|ha|han|yes|sahi|theek|thik|hyan|correct)\b",
+                yes = conf == "yes" or (not u and re.search(r"\b(haan|ha|han|yes|sahi|theek|thik|hyan|hya|hyaa|correct)\b",
                                                             light(text)))
                 if yes:
                     action, key = "done", "done"
