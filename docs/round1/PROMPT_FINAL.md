@@ -4,7 +4,7 @@
 form's four headings, what people say and what Bolo says back at each step (voice flow is weighted most), a
 concrete action for each failure case (weighted second), and an architecture + acceptance line (buildability).*
 
-**782 words** (796 if hyphens and slashes split; form: 80-800). Paste everything between the lines.
+**783 words** (797 if hyphens and slashes split; form: 80-800). Paste everything between the lines.
 
 ---
 
@@ -23,7 +23,7 @@ Build Bolo, a voice agent that takes a patient's history before they see a docto
 4. Then one short question per turn, only for what is still missing: since when, age, anything else (fever, vomiting, breathing), long-standing illness (sugar, BP), current medicines. Never re-ask, never guess.
 5. Several voices are normal. If a daughter adds "she hasn't eaten since Tuesday", keep it, tagged with who said it. When only the patient can answer, ask the patient directly.
 6. Red flags interrupt any turn. Example: chest "gas" plus sweating at 62. Bolo says slowly, uninterruptibly: "Yeh zaroori hai. Abhi 1-1-2 par phone kijiye, ya turant sabse paas ke aspataal jaiye." Show a big 112 button and alert the front desk. Self-harm: Tele-MANAS 14416 first, plus 112. See-a-doctor-today cases (fever over three days): say so, no emergency number.
-7. Read-back: "Maine yeh samjha: do din se chakkar, kamra ghoomta hai, 72 saal. Kya yeh sahi hai?" "Yes" finishes. A correction ("nahi, teen din se") replaces the value; read back again.
+7. Read-back, e.g. in Bengali: "Ami bujhlam: dui din dhore matha ghurchhe, ghor ghurchhe, boyosh 72. Thik bujhechhi?" "Haan" or "hya" finishes. A correction ("na, tin din") replaces the value; read back again.
 8. Close: "Dhanyavaad. Aapki baat doctor tak pahunch jayegi."
 
 Timing: end the caller's turn after 1.2 s of silence, 2.8 s after open questions or for older speakers. If a reply takes over 1 s, say "Haan ji, ek second" instead of dead air. Callers can interrupt Bolo, except during emergency instructions.
