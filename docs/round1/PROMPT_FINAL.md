@@ -4,7 +4,7 @@
 form's four headings, what people say and what Bolo says back at each step (voice flow is weighted most), a
 concrete action for each failure case (weighted second), and an architecture + acceptance line (buildability).*
 
-**777 words** (form: 80-800). Paste everything between the lines.
+**782 words** (796 if hyphens and slashes split; form: 80-800). Paste everything between the lines.
 
 ---
 
@@ -19,6 +19,7 @@ Build Bolo, a voice agent that takes a patient's history before they see a docto
    - "chakkar": "Does the room spin, or do you feel you might fall? Did it start suddenly?"
    - chest "gas": "Any sweating, breathlessness, or pain going to the arm or jaw?"
    - "kamzori": "The whole body, or one side?"
+   - "BP low": "Was it measured?"
 4. Then one short question per turn, only for what is still missing: since when, age, anything else (fever, vomiting, breathing), long-standing illness (sugar, BP), current medicines. Never re-ask, never guess.
 5. Several voices are normal. If a daughter adds "she hasn't eaten since Tuesday", keep it, tagged with who said it. When only the patient can answer, ask the patient directly.
 6. Red flags interrupt any turn. Example: chest "gas" plus sweating at 62. Bolo says slowly, uninterruptibly: "Yeh zaroori hai. Abhi 1-1-2 par phone kijiye, ya turant sabse paas ke aspataal jaiye." Show a big 112 button and alert the front desk. Self-harm: Tele-MANAS 14416 first, plus 112. See-a-doctor-today cases (fever over three days): say so, no emergency number.
@@ -35,7 +36,7 @@ Timing: end the caller's turn after 1.2 s of silence, 2.8 s after open questions
 
 **Noise, accents, mixed languages and misheard input:**
 - **Noisy OPD:** adaptive noise floor, so soft voices aren't cut off. Empty or garbled transcript: "Maaf kijiye, awaaz saaf nahi aayi. Ek baar phir bataiye?" After two failures, switch to yes/no questions.
-- **Accents:** an Indian-trained speech model (e.g. AI4Bharat IndicConformer) with the expected languages as hints, plus phrase hints for the next answer (numbers after "since when"). Never correct the caller's dialect.
+- **Accents:** an Indian-trained speech model (e.g. AI4Bharat IndicConformer) with the expected languages as hints, plus phrase hints for the next answer (numbers after "since when").
 - **Mixed languages:** accept any mix mid-sentence; reply in the main language, switching only after two turns in another; store words verbatim.
 - **Misheard input:** echo durations, ages and medicine names in the read-back; corrections replace values. If a red-flag word may have been heard, ask directly ("Kya seene mein dard hai?") rather than ignore it.
 - **Crosstalk:** "Ek-ek karke boliye" (one at a time).
@@ -43,6 +44,6 @@ Timing: end the caller's turn after 1.2 s of silence, 2.8 s after open questions
 - **Failures:** red-flag rules are deterministic and run every turn even if the LLM or network fails; on errors, play a canned line and keep the intake state.
 - **Out of scope:** "Which tablet should I take?" gets "Only the doctor can answer that; I'll make sure they hear exactly what you said."
 
-Architecture: a browser call screen streams 16 kHz audio to a server that detects end of speech, transcribes, calls a stateless intake agent (rules plus an LLM filling a fixed JSON schema) and speaks the reply. Done when a scripted test set of dangerous and harmless versions of each phrase gives 100% emergency recall and zero replies naming a condition or medicine.
+Architecture: a browser call screen streams 16 kHz audio to a server that detects end of speech, transcribes, calls a stateless intake agent (rules plus an LLM filling a fixed JSON schema) and speaks the reply. Done when a scripted test set of dangerous and harmless versions of each phrase, plus a held-out set, gives 100% emergency recall and zero replies naming a condition or medicine.
 
 ---
