@@ -487,7 +487,7 @@ def temperature_f(text: str) -> float | None:
 
 
 # ---------------------------------------------------------------- speaker / relation
-_CAREGIVER = [(r"\b(meri|mere|amar|my)\s+(maa|mummy|mother|mom|ma)\b|\bmaa ko\b|\bmayer\b|\bmummy ko\b", "child"),
+_CAREGIVER = [(r"\b(meri|mere|amar|my)\s+(maan?|mummy|mother|mom|ma)\b|\bmaan? ko\b|\bmayer\b|\bmummy ko\b", "child"),
               (r"\b(mere|amar|my)\s+(papa|pita|baba|father|dad)\b|\bpapa ko\b|\bbabar\b|\bfather\b", "child"),
               (r"\b(dadi|dada|dadaji|daadi|nani|nana|thakuma|thakurda|dida|dadu|grandmother|grandfather|grandma|"
                r"grandpa)\b", "grandchild"),
@@ -508,7 +508,7 @@ def speaker(text: str) -> tuple[str, str | None] | None:
 
 def patient_sex(text: str) -> str | None:
     t = light(text)
-    if re.search(r"\b(maa|mummy|mother|dadi|nani|beti|behen|patni|wife|she|her|mayer|meyer|thakuma|dida|"
+    if re.search(r"\b(maan?|mummy|mother|dadi|nani|beti|behen|patni|wife|she|her|mayer|meyer|thakuma|dida|"
                  r"grandmother|grandma|didi)\b", t):
         return "female"
     if re.search(r"\b(papa|father|dada|dadaji|nana|beta|bhai|pati|husband|he|his|babar|chheler|thakurda|dadu|"

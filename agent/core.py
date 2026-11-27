@@ -234,6 +234,7 @@ def _apply_rules(state: dict, text: str) -> None:
         state["history"]["conditions"]["status"] = "heard"
     if d:
         st["duration_said"] = d[1]
+        st["duration_src"] = _span(text, d[1])
     if not state["chief_complaint"]["value"]:
         idiom_now = [i for i in IDIOM_ORDER if i in rules.idioms(text)]
         cands = [(s, lbl) for s, lbl in _CC_FALLBACK if s in present]
@@ -246,6 +247,55 @@ def _apply_rules(state: dict, text: str) -> None:
                 {"name": label, "said": text, "onset": None,
                  "duration": rules._fmt_days(d[0]) if d else None, "severity": None, "location": None,
                  "character": None, "pattern": None, "associated": [], "status": "heard"}]
+
+
+def _span(text: str, phrase: str) -> str | None:
+    """The words of `text`, in the user's own script, that read as `phrase` (a romanised duration like 'teen din')."""
+    ws, p = text.split(), phrase.split()
+    norm = [re.sub(r"[^a-z0-9']", "", light(w)) for w in ws]
+    for i in range(len(ws) - len(p) + 1):
+        if norm[i:i + len(p)] == p:
+            return " ".join(re.sub(r"[,.;!?।]+$", "", w) for w in ws[i:i + len(p)])
+    return None
+
+
+def _swap_duration(said: str | None, new_src: str | None, new_phrase: str) -> str | None:
+    """`said` with its duration words replaced by the corrected ones ('maa ko do din se ...' -> 'maa ko teen din se
+    ...'), or None if `said` holds no single duration that can be swapped."""
+    if not said or not new_src:
+        return None
+    olds = [p for _, p, _ in rules.durations(said) if p != new_phrase]
+    if len(olds) != 1:
+        return None
+    old_src = _span(said, olds[0])
+    if not old_src or old_src not in said:
+        return None
+    return said.replace(old_src, new_src, 1)
+
+
+def _correct_duration(state: dict, text: str, pre_dur: float | None, at_readback: bool) -> bool:
+    """A new 'since when' that replaces an earlier one ('nahi, teen din se' at the read-back, or any 'no, ...' turn)
+    is a correction: it updates the chief symptom's duration everywhere (symptoms[0], the complaint words on the card,
+    the read-back) and marks it 'corrected'. Returns True if it did."""
+    st = state["_internal"]
+    d = rules.latest_duration(text)
+    if not d or pre_dur is None or d[0] == pre_dur or not state["symptoms"]:
+        return False
+    if not (at_readback or rules.yes_no(text) == "no"):
+        return False
+    s0 = state["symptoms"][0]
+    st["duration_prev"] = s0.get("duration") or rules._fmt_days(pre_dur)
+    st["duration_days"] = d[0]
+    s0["duration"] = rules._fmt_days(d[0])
+    s0["status"] = "corrected"
+    cc = state["chief_complaint"]
+    for obj in (cc, s0):
+        new = _swap_duration(obj.get("said"), st.get("duration_src"), d[1])
+        if new:
+            obj["said"] = new
+    if cc["value"]:
+        cc["status"] = "corrected"
+    return True
 
 
 def _ctx(state: dict) -> rules.Ctx:
@@ -274,8 +324,12 @@ def _clinician_summary(state: dict, flags: list[dict]) -> str | None:
     cc = state["chief_complaint"]
     if cc["value"]:
         parts.append(f"Chief complaint: {cc['value']}" + (f' (said: "{cc["said"]}")' if cc["said"] else "") + ".")
-    for s in state["symptoms"][:4]:
-        bits = [x for x in (s.get("duration") and f"for {s['duration']}", s.get("location"), s.get("severity"),
+    prev = state["_internal"].get("duration_prev")
+    for i, s in enumerate(state["symptoms"][:4]):
+        dur = s.get("duration") and f"for {s['duration']}"
+        if dur and i == 0 and s.get("status") == "corrected" and prev and prev != s["duration"]:
+            dur += f" (corrected by the caller; first said {prev})"
+        bits = [x for x in (dur, s.get("location"), s.get("severity"),
                             s.get("character"), s.get("associated") and "with " + ", ".join(s["associated"])) if x]
         if bits:
             parts.append(f"{s['name']}: " + "; ".join(bits) + ".")
@@ -605,6 +659,7 @@ def turn(req: dict) -> dict:
         prev = st.get("pending")
         field = _FIELD_OF.get(prev)
         pre_age, pre_dur = state["patient"]["age_years"], st["duration_days"]
+        phase0 = state["phase"]
         misheard = not text
         if not text:
             action, key = _misheard(state)
@@ -635,6 +690,11 @@ def turn(req: dict) -> dict:
                     st["summary_patient_roman"] = (u.get("summary_patient_roman") or "").rstrip(" .") or None
             else:
                 st["llm_fail"] += 1
+            # a spoken correction of "since when" wins over the model's fields; the read-back is then built from the
+            # corrected words, so it is certain to say the new duration
+            corrected = _correct_duration(state, text, pre_dur, phase0 == "confirming")
+            if corrected:
+                st["summary_patient"] = st["summary_patient_roman"] = None
             # red flags (rules over rule+LLM signs)
             raised = {f["id"]: f for f in st["raised"]}
             if "chest" in st["signs"] and st.get("chest_turn") is None:
@@ -691,7 +751,7 @@ def turn(req: dict) -> dict:
                 conf = (u or {}).get("confirmation", "none")
                 yes = conf == "yes" or (not u and yn_ans == "yes")
                 changed = state["patient"]["age_years"] != pre_age or st["duration_days"] != pre_dur
-                if changed and not u:  # rules-only correction ("na, tin din", or the age they were asked for)
+                if corrected or (changed and not u):  # "na, tin din", or the age they were asked for
                     if st["duration_days"] != pre_dur and state["symptoms"]:
                         state["symptoms"][0]["duration"] = rules._fmt_days(st["duration_days"])
                         state["symptoms"][0]["status"] = "corrected"
