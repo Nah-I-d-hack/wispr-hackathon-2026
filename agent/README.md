@@ -44,3 +44,21 @@ patient read-back get simpler.
   or at the end) and `expect.stt_hints` (likely next words for the current question).
 - Self-harm escalations: `call` = 14416, `calls` = [112].
 
+## R4: phone calls and misheard speech
+
+- **Phone (`phone_in` / `phone_out`)**: no line refers to a screen (tested over every line, all languages). An emergency
+  on a phone call sets `transfer: true` and speaks the `*_transfer` line in full ("connecting you to emergency help
+  now ... if the call drops, call 1 1 2"); web keeps the original "call 112 now" wording. Numbers are spelled digit
+  by digit in both `text` and `text_roman`.
+- **Values that don't parse** (all channels): an answer to "since when?" / "how old?" that gives no value gets one
+  simpler re-ask with examples (`q_duration_retry`, `q_age_retry`; a bare number like "chaalis" is accepted). A second
+  miss stores the words in `_internal.unclear` and moves on; the read-back then says what was not understood
+  (`unclear_*`), and an answer at the read-back fills it and reads back again. Never on a red-flag turn.
+- **Two misheard turns in a row** (empty transcript, or `stt_confidence` < 0.35 with nothing understood): switch to
+  yes/no questions (`yn_*`) for the rest of the call. A "yes" adds the matching sign, so red-flag rules treat it like
+  the spoken words. Five misheard turns in a row end politely, keeping what was collected.
+- **Reply language**: set by the first utterance, then changes only after two turns in a row in another language.
+- **Possibly misheard red-flag word** (a word one letter from "seene", "saans", "khoon", "behosh"..., or a red-flag
+  word only in `transcript.alternatives`): asked about directly ("Kya seene mein dard hai?").
+- `python -m agent.build_lines --changed` converts only new or edited lines and keeps the reviewed ones as they are.
+
