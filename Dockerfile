@@ -10,6 +10,10 @@ WORKDIR /bolo
 COPY app/requirements.txt app/requirements.txt
 # faster-whisper is the default speech-to-text for the phone-call screen: it runs on CPU and needs no key.
 RUN pip install --no-cache-dir -r app/requirements.txt faster-whisper==1.2.1
+# Bake the Whisper model into the image (~480 MB): the call screen works on first start, with no download and no
+# internet. Other sizes (WHISPER_MODEL) still download on first use.
+ENV HF_HOME=/opt/hf
+RUN python -c "from faster_whisper import WhisperModel; WhisperModel('small', device='cpu', compute_type='int8')"
 
 COPY . .
 # Repos already cloned on Windows may have CRLF line endings; sh would fail on them.
