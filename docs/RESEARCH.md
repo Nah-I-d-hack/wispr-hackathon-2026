@@ -13,8 +13,11 @@ for women of child-bearing age, pregnancy. Our intake state (`contracts/INTAKE.m
 the patient's own words (`said`) next to each normalised field.
 
 **Where it breaks in India.**
-- *Time.* A 67-country review found Indian primary-care visits average about **two minutes** (press coverage notes
-  the figure mostly reflects crowded government OPDs). Much of that goes to asking the basics.
+- *Time.* A 67-country review (Irving et al. 2017) has no India sentence, but its Table 1 lists four Indian studies
+  timing primary-care consultations: mean **1.5, 1.9, 2.0 and 2.3 minutes** (1979-2015; quality rated fair or poor by
+  the authors; one is a Kolkata CGHS-dispensary audit). So "about two minutes" holds, on old and small studies.
+  *Checked 27 Nov against the table.* The press line that it "mostly reflects crowded government OPDs" is not in the
+  paper; don't use it.
 - *Language.* Registration forms and records are in English or formal Hindi; the patient speaks Bengali, Bhojpuri or
   a mix. Census 2011 recorded 19,569 mother-tongue names, rationalised into 121 languages.
 - *Meaning.* Patients describe illness in everyday phrases ("gas", "chakkar", "ghabrahat", "kamzori") that a form or
@@ -27,6 +30,26 @@ the patient's own words (`said`) next to each normalised field.
    turn (K's desk view).
 3. *The patient / family:* the read-back in their language, to confirm or correct.
 ASHA workers and tele-consultation (e.g. eSanjeevani) are natural later receivers; the contract does not change.
+
+**How many (added 27 Nov for the Round 2 deck, slide 4).**
+- *People over 60:* about **13.8 crore in 2021 (10.1% of the population)**,
+  projected to **19.4 crore (13.1%) by 2031**. Source: NSO (MoSPI), *Elderly in India 2021*, Table 3.1, which takes
+  the figures from the Technical Group on Population Projections 2011-2036. These are projections for 2021, not a
+  count; there has been no census since 2011. The newer figure used on the deck and in the Impact answer: **14.9 crore (149 million, 10.5%) on 1 July 2022**, UNFPA &
+  IIPS, *India Ageing Report 2023* ([PDF](https://india.unfpa.org/sites/default/files/pub-pdf/iar_2023_rgb_web.pdf)), so the
+  Impact draft's "about 15 crore" is sourced.
+- *Yearly OPD visits, all India:* **not found.** Neither MoHFW's Annual Report 2023-24 nor its "Initiatives &
+  Achievements 2025" gives a national yearly outpatient count; HMIS publishes facility-level data only. Cut from the
+  deck rather than estimated.
+- *Primary-care visits, cumulative:* 1,81,873 Ayushman Arogya Mandirs (upgraded sub-centres and PHCs) had recorded a
+  **footfall of 494.71 crore** and 41.93 crore teleconsultations as on 30 Nov 2025 (MoHFW, Initiatives & Achievements
+  2025). A running total since the programme began, not a yearly figure.
+
+**Running cost inputs (deck slide 8).** Gemini 3.5 Flash-Lite, paid tier: $0.30 per million input tokens, $2.50 per
+million output tokens; free tier available (Google AI Studio pricing page, read 27 Nov 2026). Plivo India voice:
+Rs 0.38 per minute inbound or outbound, 30-second pulse, Rs 200 a month per domestic number (Plivo pricing page, read
+27 Nov 2026). Tokens per intake are our estimate from prompt sizes (`agent/core.py`: instructions 734 characters,
+answer schema 3,500), not measured; the math is in the slide 8 speaker note.
 
 ## 2. Red flags and misread symptoms [R]
 
@@ -165,7 +188,12 @@ Sources for this section: [LASI Wave 1 key indicators for the elderly, IIPS](htt
 
 | claim | source | strength |
 |---|---|---|
-| ~2-minute primary-care visits in India | Irving et al., BMJ Open 2017, 67-country review ([PMC](https://pmc.ncbi.nlm.nih.gov/articles/5695512)) | peer-reviewed; India table not checked by us |
+| ~2-minute primary-care visits in India (four Indian studies, means 1.5-2.3 min, 1979-2015) | Irving et al., BMJ Open 2017, 67-country review, Table 1 ([PMC5695512](https://pmc.ncbi.nlm.nih.gov/articles/PMC5695512/)) | peer-reviewed review; the Indian studies are old and rated fair/poor; table checked 27 Nov |
+| 13.8 crore aged 60+ in 2021 (10.1%), 19.4 crore by 2031 | NSO / MoSPI, *Elderly in India 2021*, Table 3.1, from the Technical Group population projections 2011-2036 ([PDF](https://mospi.gov.in/sites/default/files/publication_reports/Elderly%20in%20India%202021.pdf)) | official; projections, not a census count |
+| Ayushman Arogya Mandirs: 1,81,873 centres, footfall 494.71 crore (cumulative, to 30 Nov 2025) | MoHFW, *Initiatives & Achievements 2025* ([PIB PDF](https://static.pib.gov.in/WriteReadData/specificdocs/documents/2026/jan/doc202611749801.pdf)) | official |
+| Yearly OPD visits, all India | none found (MoHFW Annual Report 2023-24 and Achievements 2025 checked) | **cut from the deck** |
+| Gemini 3.5 Flash-Lite: $0.30 / $2.50 per million input / output tokens (paid tier) | [Google AI Studio pricing](https://aistudio.google.com/docs/pricing), read 27 Nov 2026 | official price list; can change |
+| Plivo India voice: Rs 0.38 per minute, Rs 200 a month per number | [Plivo India voice pricing](https://www.plivo.com/voice/pricing/in/), read 27 Nov 2026 | official price list; can change |
 | 1 in 5 Indians 60+ by 2050 (20.8%, 347 M) | UNFPA / IIPS India Ageing Report 2023 ([UNFPA](https://india.unfpa.org/en/news/india-ageing-elderly-make-20-population-2050-unfpa-report)) | official report, via press release |
 | ~10% speak English (any level) | Census 2011, via secondary summary ([link](https://www.thehistoryofenglish.com/how-many-people-in-india-speak-english)) | **weak**: not checked in census tables, don't use without checking |
 | 19,569 mother-tongue names, 121 languages | Census 2011 language data ([summary](https://www.legacyias.com/the-languages-india-speaks/)) | official figures, via secondary summary |
