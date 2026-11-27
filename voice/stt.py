@@ -84,7 +84,13 @@ ENGINES = {"indicconformer": _indic_stt, "whisper": _whisper_stt, "wispr": _wisp
 
 
 def engine_name() -> str:
-    return os.environ.get("STT_ENGINE", "indicconformer")
+    """STT_ENGINE if set; otherwise IndicConformer when its dependencies are installed, else Whisper (no key)."""
+    name = os.environ.get("STT_ENGINE")
+    if name:
+        return name
+    import importlib.util
+    return "indicconformer" if importlib.util.find_spec("transformers") and importlib.util.find_spec("torch") \
+        else "whisper"
 
 
 def stt(pcm: bytes, lang: str, hints: list[str] | None = None, prompt: str = "") -> dict:

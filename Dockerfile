@@ -12,6 +12,8 @@ COPY app/requirements.txt app/requirements.txt
 RUN pip install --no-cache-dir -r app/requirements.txt faster-whisper==1.2.1
 
 COPY . .
+# Repos already cloned on Windows may have CRLF line endings; sh would fail on them.
+RUN sed -i 's/\r$//' deploy/start.sh
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
 CMD ["sh", "deploy/start.sh"]

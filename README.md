@@ -24,5 +24,7 @@ screen in the background; the main screen works immediately.
 Without Docker: `uv venv -p 3.12 && uv pip install -r app/requirements.txt faster-whisper`, then
 `. .venv/bin/activate && sh deploy/start.sh`.
 
-Status: setting up. See `docs/PLAN.md` for tasks, `docs/HACKATHON.md` for rules and dates, `docs/ONBOARDING.md` to
-join, and `CLAUDE.md` for how the two agents (R and K) work together.
+Status: Round 2 prototype. Bolo runs voice intakes in Hindi, Bengali, English and code-mixed speech in the browser
+(main screen and /call). It escalates red flags to 112 and shows them on the front-desk view (/desk). See
+`docs/PLAN.md` for tasks, `docs/HACKATHON.md` for rules and dates, and `CLAUDE.md` for how the two agents (R and K)
+work together.
