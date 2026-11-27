@@ -19,7 +19,7 @@ Open **http://localhost:8000** in Chrome, pick a language and tap the mic (or ty
 
 The screen says which keys are missing. Other pages: **/call** (talk to Bolo like a phone call) and **/desk**
 (what the front desk sees, with emergency alerts). The speech model for the call screen is built into the image,
-so the first build takes a few minutes and everything works offline after that.
+so the first build takes a few minutes; after that the call screen and the safety rules work without internet.
 
 Without Docker: `uv venv -p 3.12 && uv pip install -r app/requirements.txt faster-whisper`, then
 `. .venv/bin/activate && sh deploy/start.sh`.
