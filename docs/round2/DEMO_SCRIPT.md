@@ -29,10 +29,10 @@ Show: the mic button, captions, and the "what we understood" card filling in.
 | Daughter | "kamra ghoomta hua lagta hai" | |
 | Bolo | asks age | |
 | Daughter | "pachattar saal" | |
-| ... | answer the next 1-2 questions briefly | speed it up 2x in the edit if needed |
-| Bolo | **read-back** in Hindi | the read-back is the safety step |
+| Bolo | "Iske saath aur kuch ho raha hai?" / "Pehle se koi bimari?" / "Koi dawai?" | three quick questions; Daughter answers "nahi" to each. Speed up 2x in the edit |
+| Bolo | **read-back**: "Maine yeh samjha: maa ko do din se chakkar..., 75 saal. Kya yeh sahi hai?" | the read-back is the safety step |
 | Daughter | "nahi, teen din se" | **a spoken correction**, card changes 2 days -> 3 days, marked "corrected" |
-| Bolo | reads back the change | |
+| Bolo | "Maine yeh samjha: maa ko teen din se chakkar..., 75 saal. Kya yeh sahi hai?" | the new duration, read back |
 | Daughter | "haan" | done |
 
 Cut to the clinician summary in English (2 seconds on screen): her own words next to the English.
@@ -44,6 +44,9 @@ Cut to the clinician summary in English (2 seconds on screen): her own words nex
 | Caregiver | "amar mayer teen din dhore jor, boyos sottor" |
 | Bolo | follow-up in Bengali |
 | ... | jump-cut to the Bengali read-back and "hya" |
+
+*Don't correct the duration in this scene: fever above 3 days correctly switches Bolo to the urgent path (U1), which
+is a different story. Use "na, aar kichhu na" to the follow-ups.*
 
 Caption: "Hindi, Bengali, English, or a mix. Nothing to read, nothing to type."
 
