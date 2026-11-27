@@ -30,7 +30,9 @@ from fastapi.staticfiles import StaticFiles
 
 from voice import stt as stt_mod
 from voice import vocab, wispr
+from voice import tts
 from voice.call import CallSession
+from voice.phone import PhoneBridge
 
 from . import mock_agent
 
@@ -68,7 +70,7 @@ async def health() -> dict:
             llm = None
     missing = [k for k, ok in (("WISPR_API_KEY", wispr.available()), ("GEMINI_API_KEY", llm is not False)) if not ok]
     return {"ok": True, "contract": mock_agent.CONTRACT, "agent": AGENT_URL or "mock",
-            "stt": "wispr" if wispr.available() else "browser", "call_stt": stt_mod.engine_name(), "llm": llm,
+            "stt": "wispr" if wispr.available() else "browser", "call_stt": stt_mod.engine_name(), "phone_tts": tts.engine_name(), "llm": llm,
             "keys_missing": missing}
 
 
@@ -153,6 +155,44 @@ async def call_ws(ws: WebSocket, lang: str = "hi") -> None:
         if call.state != "ended":
             call.state = "ended"  # caller dropped; nothing to say
         _log("calls.jsonl", {"t": time.time(), "session_id": sid, "turns": call.turn, "metrics": call.metrics})
+        try:
+            await ws.close()
+        except RuntimeError:
+            pass
+
+
+@app.websocket("/ws/phone")
+async def phone_ws(ws: WebSocket) -> None:
+    """Telephony media stream (Twilio Media Streams protocol; see voice/phone.py). Point a provider's stream here,
+    or run scripts/phone_sim.py to call it with recorded or synthetic speech."""
+    await ws.accept()
+    sid = f"phone-{uuid.uuid4().hex[:12]}"
+    lock = asyncio.Lock()
+
+    async def send_json(msg: dict) -> None:
+        async with lock:
+            await ws.send_json(msg)
+
+    def make_call(send, lang):
+        return CallSession(sid, send, agent_turn, lang=lang, channel="phone", hints=VOCAB, fillers=_fillers())
+
+    bridge = PhoneBridge(send_json, make_call)
+    try:
+        while not (bridge.call and bridge.call.state == "ended"):
+            m = await ws.receive()
+            if m["type"] == "websocket.disconnect":
+                break
+            if m.get("text"):
+                await bridge.on_provider(json.loads(m["text"]))
+    except WebSocketDisconnect:
+        pass
+    finally:
+        call = bridge.call
+        if call and call.state != "ended":
+            call.state = "ended"
+        _log("calls.jsonl", {"t": time.time(), "session_id": sid, "channel": "phone", "call_sid": bridge.call_sid,
+                             "turns": call.turn if call else 0, "metrics": call.metrics if call else [],
+                             "transfers": bridge.transfers})
         try:
             await ws.close()
         except RuntimeError:

@@ -2,7 +2,8 @@
 FROM python:3.12-slim
 
 # ffmpeg converts browser audio (webm/ogg) to 16 kHz WAV for server-side speech-to-text.
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
+# espeak-ng is the no-key text-to-speech for phone calls (voice/tts.py); Google TTS replaces it when a key is set.
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg espeak-ng \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /bolo
