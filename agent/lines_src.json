@@ -1,5 +1,5 @@
 {
- "_note": "[R] Source of every fixed line the agent speaks. en = English, hi/bn = romanised Hindi/Bengali written by R (respectful register, gender-neutral for the agent's own voice). agent/build_lines.py converts hi/bn to native script into agent/lines.json; keep this file the source of truth. {s} = read-back content. {name} = patient's first name (outbound calls).",
+ "_note": "[R] Source of every fixed line the agent speaks. en = English, hi/bn = romanised Hindi/Bengali written by R (respectful register, gender-neutral for the agent's own voice). agent/build_lines.py converts hi/bn to native script into agent/lines.json; keep this file the source of truth. {s} = read-back content. {name} = patient's first name (outbound calls). yn_* = yes/no questions (after two misheard turns in a row, or to check a red-flag word that may have been misheard); rb_* = read-back fragments for yes/no answers; unclear_* = said after the read-back for a value that did not parse twice. *_transfer = escalation spoken on a phone call that is being bridged to the helpline (transfer: true).",
  "greet": {
   "en": "Hello. Tell me, what is troubling you? Take your time, in your own words.",
   "hi": "Namaste. Bataiye, kya takleef hai? Aaram se, apne shabdon mein boliye.",
@@ -169,5 +169,135 @@
   "en": "Mm-hm, just a second.",
   "hi": "Achha, ek pal.",
   "bn": "Achha, ektu daran."
+ },
+ "q_duration_retry": {
+  "en": "For how many days? For example, two days, one week, or one month.",
+  "hi": "Kitne din se? Jaise do din, ek hafta, ya ek mahina.",
+  "bn": "Koto din dhore? Jemon dui din, ek soptaho, ba ek mash."
+ },
+ "q_age_retry": {
+  "en": "How many years? For example, forty, fifty, or sixty.",
+  "hi": "Kitne saal? Jaise chaalis, pachaas, ya saath.",
+  "bn": "Koto bochhor? Jemon chollish, ponchash, ba shat."
+ },
+ "unclear_age": {
+  "en": "I did not catch the age clearly; you can tell me now.",
+  "hi": "Umar saaf samajh nahi aayi; chahein to abhi bata dijiye.",
+  "bn": "Boyosh ta thik bujhte parini; chaile ekhon bolte paren."
+ },
+ "unclear_duration": {
+  "en": "I did not catch since when clearly; you can tell me now.",
+  "hi": "Kab se hai, yeh saaf samajh nahi aaya; chahein to abhi bata dijiye.",
+  "bn": "Kobe theke, ta thik bujhte parini; chaile ekhon bolte paren."
+ },
+ "unclear_both": {
+  "en": "I did not catch the age or since when clearly; you can tell me now.",
+  "hi": "Umar aur kab se hai, yeh saaf samajh nahi aaya; chahein to abhi bata dijiye.",
+  "bn": "Boyosh ar kobe theke, ta thik bujhte parini; chaile ekhon bolte paren."
+ },
+ "yn_chest": {
+  "en": "Is there pain in the chest? Please say yes or no.",
+  "hi": "Kya seene mein dard hai? Haan ya nahi boliye.",
+  "bn": "Buke ki byatha achhe? Hya ba na bolun."
+ },
+ "yn_breath": {
+  "en": "Is there trouble breathing? Please say yes or no.",
+  "hi": "Kya saans lene mein takleef hai? Haan ya nahi boliye.",
+  "bn": "Shash nite ki koshto hochhe? Hya ba na bolun."
+ },
+ "yn_bleeding": {
+  "en": "Is there any bleeding? Please say yes or no.",
+  "hi": "Kya kahin se khoon aa raha hai? Haan ya nahi boliye.",
+  "bn": "Kothao theke ki rokto porchhe? Hya ba na bolun."
+ },
+ "yn_unconscious": {
+  "en": "Did anyone faint, or is someone not responding? Please say yes or no.",
+  "hi": "Kya koi behosh hua, ya jawab nahi de raha? Haan ya nahi boliye.",
+  "bn": "Keu ki ojnan hoyechhen, ba sara dichhen na? Hya ba na bolun."
+ },
+ "yn_duration": {
+  "en": "Has this been going on for more than three days? Please say yes or no.",
+  "hi": "Kya yeh takleef teen din se zyada se hai? Haan ya nahi boliye.",
+  "bn": "Ei osubidha ki tin diner beshi dhore? Hya ba na bolun."
+ },
+ "yn_age": {
+  "en": "Is the person who is unwell over sixty? Please say yes or no.",
+  "hi": "Jinki takleef hai, kya unki umar saath saal se zyada hai? Haan ya nahi boliye.",
+  "bn": "Jar osubidha, tar boyosh ki shat bochhorer beshi? Hya ba na bolun."
+ },
+ "yn_other": {
+  "en": "Is there also fever, vomiting, or trouble breathing? Please say yes or no.",
+  "hi": "Kya saath mein bukhar, ulti, ya saans ki takleef bhi hai? Haan ya nahi boliye.",
+  "bn": "Sathe ki jor, bomi, ba shash koshto achhe? Hya ba na bolun."
+ },
+ "yn_conditions": {
+  "en": "Is there a sugar or blood pressure illness? Please say yes or no.",
+  "hi": "Kya sugar ya BP ki bimari hai? Haan ya nahi boliye.",
+  "bn": "Sugar ba pressure er rog achhe ki? Hya ba na bolun."
+ },
+ "yn_medicines": {
+  "en": "Are any medicines being taken right now? Please say yes or no.",
+  "hi": "Kya abhi koi dawai chal rahi hai? Haan ya nahi boliye.",
+  "bn": "Ekhon ki kono oshudh khachhen? Hya ba na bolun."
+ },
+ "yn_I_gas": {
+  "en": "Is there sweating or breathlessness with it? Please say yes or no.",
+  "hi": "Kya iske saath pasina ya saans phoolna hai? Haan ya nahi boliye.",
+  "bn": "Er sathe ki ghaam ba shash koshto achhe? Hya ba na bolun."
+ },
+ "yn_I_one_side": {
+  "en": "Is it only on one side of the body? Please say yes or no.",
+  "hi": "Kya yeh sirf sharir ke ek taraf hai? Haan ya nahi boliye.",
+  "bn": "Eta ki shudhu shorirer ek dike? Hya ba na bolun."
+ },
+ "yn_I_sudden": {
+  "en": "Did it start suddenly? Please say yes or no.",
+  "hi": "Kya yeh achanak shuru hua? Haan ya nahi boliye.",
+  "bn": "Eta ki hothat shuru holo? Hya ba na bolun."
+ },
+ "rb_chest": {
+  "en": "chest pain",
+  "hi": "seene mein dard",
+  "bn": "buke byatha"
+ },
+ "rb_breath": {
+  "en": "trouble breathing",
+  "hi": "saans lene mein takleef",
+  "bn": "shash nite koshto"
+ },
+ "rb_over3": {
+  "en": "more than three days",
+  "hi": "teen din se zyada",
+  "bn": "tin diner beshi"
+ },
+ "rb_upto3": {
+  "en": "three days or less",
+  "hi": "teen din ya usse kam",
+  "bn": "tin din ba tar kom"
+ },
+ "rb_over60": {
+  "en": "over sixty",
+  "hi": "umar saath se zyada",
+  "bn": "boyosh shat er beshi"
+ },
+ "rb_under60": {
+  "en": "under sixty",
+  "hi": "umar saath se kam",
+  "bn": "boyosh shat er kom"
+ },
+ "esc_emergency_transfer": {
+  "en": "This sounds serious. I am connecting you to emergency help now. Please stay on the line. If the call drops, call 112.",
+  "hi": "Yeh gambhir lag raha hai. Aapko abhi emergency madad se joda ja raha hai. Line par bane rahiye. Agar call kat jaye, to 112 par phone kijiye.",
+  "bn": "Eta gurutor mone hochhe. Apnake ekhuni joruri sahajyer sathe jukto kora hochhe. Line e thakun. Phone kete gele, 112-e phone korun."
+ },
+ "esc_self_harm_transfer": {
+  "en": "I'm glad you told me. I am connecting you now to someone you can talk to, for free. Please stay on the line. If the call drops, call 14416, or 112 if you are in danger right now.",
+  "hi": "Aapne bataya, achha kiya. Aapko abhi kisi se baat karne ke liye joda ja raha hai, muft. Line par bane rahiye. Agar call kat jaye, to 14416 par phone kijiye, ya abhi khatra ho to 112 par.",
+  "bn": "Apni bolechhen, khub bhalo korechhen. Apnake ekhuni karo sathe kotha bolar jonno jukto kora hochhe, binamullye. Line e thakun. Phone kete gele, 14416-e phone korun, ba ekhuni bipod hole 112-e."
+ },
+ "yn_I_tension": {
+  "en": "Have you ever had thoughts of harming yourself? Please say yes or no.",
+  "hi": "Kya kabhi khud ko nuksaan pahunchane ka khayal aaya hai? Haan ya nahi boliye.",
+  "bn": "Kokhono nijer khoti korar kotha mone hoyechhe? Hya ba na bolun."
  }
 }

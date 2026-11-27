@@ -230,9 +230,10 @@ _NUM = {"ek": 1, "one": 1, "do": 2, "dui": 2, "two": 2, "teen": 3, "tin": 3, "th
         "saat": 7, "sat": 7, "seven": 7, "aath": 8, "at": 8, "eight": 8, "nau": 9, "noy": 9, "nine": 9, "das": 10,
         "dosh": 10, "ten": 10, "pachchis": 25, "tees": 30, "tirish": 30, "chaalis": 40, "chollish": 40,
         "pachaas": 50, "ponchash": 50, "saath": 60, "shat": 60, "sattar": 70, "sottor": 70, "assi": 80, "ashi": 80,
-        "atshotti": 68, "nabbe": 90, "nobboi": 90, "a": 1, "an": 1}
+        "atshotti": 68, "nabbe": 90, "nobboi": 90, "a": 1, "an": 1, "twenty": 20, "thirty": 30, "forty": 40,
+        "fifty": 50, "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90, "bees": 20, "kuri": 20}
 _UNIT_DAYS = {"din": 1, "dino": 1, "dinon": 1, "divas": 1, "day": 1, "days": 1, "hafte": 7, "hafta": 7,
-              "hapta": 7, "week": 7, "weeks": 7, "saptah": 7, "mahine": 30, "mahina": 30, "month": 30,
+              "hapta": 7, "week": 7, "weeks": 7, "saptah": 7, "soptaho": 7, "soptah": 7, "saptaho": 7, "mahine": 30, "mahina": 30, "month": 30,
               "months": 30, "mash": 30, "ghante": 1 / 24, "ghanta": 1 / 24, "hour": 1 / 24, "hours": 1 / 24,
               "ghonta": 1 / 24, "saal": 365, "sal": 365, "year": 365, "years": 365, "bochhor": 365}
 
@@ -282,7 +283,7 @@ def age(text: str) -> int | None:
     pats = [r"\b(\d{1,3})\s*(?:saal|sal|years?|yrs?|bochhor|boyosh|baras)\b",
             r"\b(?:umar|umr|age|boyosh|boyesh|aged)\s*(?:hai|is)?\s*(\d{1,3}|[a-z]+)\b",
             r"\b(?:she|he|i|they)\s*(?:is|am|are)\s*(\d{1,3})\b",
-            r"\b([a-z]+)\s*(?:saal|sal|bochhor)\s*(?:ke|ki|ka|er)?\b"]
+            r"\b([a-z]+)\s*(?:saal|sal|bochhor)\s*(?:ke|ki|ka|er)?\b", r"\b([a-z]+)\s*years?\s*old\b"]
     for p in pats:
         for m in re.finditer(p, t):
             v = _num(m.group(1))
@@ -292,6 +293,73 @@ def age(text: str) -> int | None:
     if m and _num(m.group(1)) is not None:
         return 0
     return None
+
+
+def bare_number(text: str) -> int | None:
+    """A lone number answer ('chaalis', '62', 'two') to a question that asked for one; None if absent or several."""
+    nums = [n for w in re.findall(r"[a-z0-9]+", light(text)) if w not in ("a", "an")
+            for n in [_num(w)] if n is not None]
+    return int(nums[0]) if len(nums) == 1 and 0 < nums[0] < 120 else None
+
+
+_YES = re.compile(r"\b(haan|haa|ha|han|haanji|ji haan|yes|yeah|yep|sahi|theek|thik|hyan|hya|hyaa|hae|correct|"
+                  r"right|bilkul|achha)\b")
+_NO = re.compile(r"\b(nahi|nahin|nai|na|naa|no|nope|nei|not|bilkul nahi)\b")
+
+
+def yes_no(text: str) -> str | None:
+    """'yes' / 'no' / None for a short yes-or-no answer. 'no' wins when both appear ('nahi, theek nahi')."""
+    t = light(text)
+    if _NO.search(t):
+        return "no"
+    return "yes" if _YES.search(t) else None
+
+
+# ---------------------------------------------------------------- possibly-heard red-flag words (prompt spec)
+# A transcript word one letter away from a red-flag word ('seenay', 'khoom', 'behos') may be that word, misheard.
+# The agent then asks directly ("Is there pain in the chest?") instead of ignoring it. Real words that sit one letter
+# from a target ('saas' = mother-in-law, 'khoob' = very) are never treated as near misses.
+_MAYBE = {"chest": ["seena", "seene", "chhati", "chhaati", "chest"],
+          "breathless": ["saans", "shash", "shwas", "breathe", "breath", "breathing"],
+          "bleeding": ["khoon", "rokto", "blood", "bleeding"],
+          "unconscious": ["behosh", "behoshi", "ojnan", "unconscious", "fainted"]}
+_REAL_WORDS = {"saas", "saans", "khoob", "khub", "sena", "seen", "seena", "seene", "sine", "sina", "flood", "bread",
+               "breed", "best", "chess", "rokte", "rokta", "roko", "shaam", "sheena", "chhota", "chhoti", "chaati",
+               "baat", "bhosh", "chhat", "chhati", "shah", "cheat", "behes", "beheno", "dhoom", "koon", "kaun",
+               "hoon", "jeene", "jeena", "peene", "peena", "leene", "dene", "seene", "soon", "noon", "moon", "blond",
+               "bloom", "chase", "sasha", "shashi", "dhoon", "khoj", "shwet"}
+
+
+def _lev1(a: str, b: str) -> bool:
+    """True when a and b differ by exactly one edit (insert, delete or substitute)."""
+    if a == b or abs(len(a) - len(b)) > 1:
+        return False
+    if len(a) == len(b):
+        return sum(x != y for x, y in zip(a, b)) == 1
+    if len(a) > len(b):
+        a, b = b, a
+    for i in range(len(b)):
+        if b[:i] + b[i + 1:] == a:
+            return True
+    return False
+
+
+def maybe_flags(text: str, alternatives: list[str] | None = None) -> set[str]:
+    """Red-flag concepts that may have been said but did not match cleanly: a near-miss spelling in the transcript,
+    or a red-flag word that only an n-best alternative contains."""
+    present, negated = signs(text)
+    out: set[str] = set()
+    known = _REAL_WORDS | {w for v in LEX.values() for p in v for w in light(p).split()} | set(_NUM) | set(_UNIT_DAYS)
+    for w in re.findall(r"[a-z]+", light(text)):
+        if len(w) < 5 or w in known:
+            continue
+        for concept, targets in _MAYBE.items():
+            if any(_lev1(w, t) for t in targets):
+                out.add(concept)
+    for alt in alternatives or []:
+        if isinstance(alt, str):
+            out |= signs(alt)[0] & set(_MAYBE)
+    return out - present - negated
 
 
 def temperature_f(text: str) -> float | None:

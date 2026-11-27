@@ -53,8 +53,14 @@ def _new_state(lang: str) -> dict:
         "no_speech_count": 0,
         "transcript_log": [],
         "_internal": {"signs": [], "idioms_seen": [], "asked": [], "raised": [], "pending": None, "temp_f": None,
-                      "duration_days": None, "llm_fail": 0, "slow": False},
+                      "duration_days": None, "llm_fail": 0, "slow": False, **_r4_defaults()},
     }
+
+
+def _r4_defaults() -> dict:
+    """R4 bookkeeping (phone_in work). Added with setdefault, so states saved by older agent versions still load."""
+    return {"reasked": [], "unclear": {}, "queue": [], "stt_fail": 0, "yn_mode": False, "yn": {}, "yn_signs": [],
+            "rf_asked": [], "lang_cand": None, "last_q": None, "duration_coarse": None, "age_coarse": None}
 
 
 def _age_band(a: int | None) -> str | None:
@@ -278,30 +284,49 @@ def _clinician_summary(state: dict, flags: list[dict]) -> str | None:
                      ("allergies", "Allergies")):
         if h[k]["value"]:
             parts.append(f"{label}: {', '.join(h[k]['value'])}.")
-    signs = [x for x in state["_internal"]["signs"] if x not in ("severe", "leg", "older", "child")]
+    st = state["_internal"]
+    yn_signs = set(st.get("yn_signs") or [])
+    signs = [x for x in st["signs"] if x not in ("severe", "leg", "older", "child") and x not in yn_signs]
     if signs:
         parts.append("Signs mentioned: " + ", ".join(signs) + ".")
+    if st.get("yn"):
+        parts.append("Yes/no answers (speech was hard to understand): " + "; ".join(
+            f"{LINES[k]['en'].replace(' Please say yes or no.', '')} {v}" for k, v in st["yn"].items()) + ".")
+    if st.get("unclear"):
+        parts.append("Not understood after one re-ask: " + "; ".join(
+            f"{'age' if k == 'age' else 'since when'} (heard: \"{v}\")" for k, v in st["unclear"].items()) + ".")
     return " ".join(parts)
 
 
 _AGE_WORD = {"hi": "{n} saal", "bn": "{n} bochhor", "en": "{n} years old"}
 
 
-def _fallback_readback(state: dict, lang: str) -> str:
-    """Rules-only read-back built from the patient's own words (no English normalisation mixed in)."""
-    bits = []
+def _fallback_readback(state: dict, lang: str) -> tuple[str, str]:
+    """Rules-only read-back built from the patient's own words (no English normalisation mixed in), plus the
+    fixed fragments for yes/no answers. Returns (native, romanised)."""
+    st = state["_internal"]
+    bits: list[tuple[str, str]] = []
     cc = state["chief_complaint"]
     said = cc["said"] or ""
     if said:
-        bits.append(said)
-    elif cc["value"]:
-        bits.append(cc["value"])
-    dur = state["_internal"].get("duration_said")
+        bits.append((said, said))
+    else:
+        yn_cc = [_line(k, lang) for q, k in (("yn_chest", "rb_chest"), ("yn_breath", "rb_breath"))
+                 if st.get("yn", {}).get(q) == "yes"]
+        bits += yn_cc or ([(cc["value"], cc["value"])] if cc["value"] else [])
+    dur = st.get("duration_said")
     if dur and dur not in light(said):
-        bits.append(dur)
+        bits.append((dur, dur))
+    elif not dur and st.get("duration_coarse"):
+        bits.append(_line(f"rb_{st['duration_coarse']}", lang))
     if state["patient"]["age_years"] is not None:
-        bits.append(_AGE_WORD[lang].format(n=state["patient"]["age_years"]))
-    return ", ".join(bits) or "-"
+        a = _AGE_WORD[lang].format(n=state["patient"]["age_years"])
+        bits.append((a, a))
+    elif st.get("age_coarse"):
+        bits.append(_line(f"rb_{st['age_coarse']}", lang))
+    if not bits:
+        return "-", "-"
+    return ", ".join(b[0] for b in bits), ", ".join(b[1] for b in bits)
 
 
 def _safe_summary(summary: str | None, state: dict) -> str | None:
@@ -349,33 +374,156 @@ _IDIOM_HINTS = {"d_I_gas": ["pet", "seena", "chhati", "buk", "pasina", "ghaam", 
 
 
 def _stt_hints(key: str | None, lang: str) -> list[str]:
-    k = "q_age" if key and key.startswith("q_age") else key
+    k = "q_age" if key and key.startswith("q_age") else "q_duration" if key == "q_duration_retry" else \
+        "readback" if key and key.startswith("yn_") else key
     if k in _HINTS:
         return _HINTS[k][lang][:30]
     return _IDIOM_HINTS.get(k or "", [])[:30]
 
 
 # ---------------------------------------------------------------- policy
-def _next_question(state: dict) -> str | None:
+def _has(state: dict, field: str) -> bool:
+    st = state["_internal"]
+    if field == "duration":
+        return st["duration_days"] is not None or any(s.get("duration") for s in state["symptoms"]) or \
+            bool(st.get("duration_coarse"))
+    return state["patient"]["age_years"] is not None or bool(st.get("age_coarse"))
+
+
+# yes/no form of each question, used after two misheard turns in a row (prompt spec: "switch to yes/no questions")
+_YN_OF = {"q_duration": "yn_duration", "q_duration_retry": "yn_duration", "q_age": "yn_age", "q_age_retry": "yn_age",
+          "q_other": "yn_other", "q_conditions": "yn_conditions", "q_medicines": "yn_medicines",
+          "d_I_gas": "yn_I_gas", "d_I_kamzori": "yn_I_one_side", "d_I_sunn": "yn_I_one_side",
+          "d_I_chakkar": "yn_I_sudden", "d_I_tension": "yn_I_tension"}  # tension keeps its self-harm screen
+# a "yes" adds these signs, so the red-flag rules judge a yes/no answer exactly like the spoken words
+_YN_SIGN = {"yn_chest": "chest", "yn_breath": "breathless", "yn_bleeding": "bleeding", "yn_unconscious": "unconscious",
+            "yn_I_gas": "sweating", "yn_I_one_side": "one_side", "yn_I_sudden": "sudden",
+            "yn_I_tension": "self_harm"}
+_RF_ASK = [("chest", "yn_chest"), ("breathless", "yn_breath"), ("unconscious", "yn_unconscious"),
+           ("bleeding", "yn_bleeding")]
+_FIELD_OF = {"q_duration": "duration", "q_duration_retry": "duration", "q_age_self": "age", "q_age_other": "age",
+             "q_age_retry": "age"}
+
+
+def _base(key: str | None) -> str | None:
+    if key in ("q_age_self", "q_age_other"):
+        return "q_age"
+    if key in ("greet", "greet_phone", "greet_phone_named"):
+        return "q_open"
+    return key
+
+
+def _next_question(state: dict) -> tuple[str | None, list[str]]:
+    """(next question key, keys to mark as asked). In yes/no mode each question is swapped for its yes/no form;
+    questions without one are skipped."""
     st = state["_internal"]
     asked = set(st["asked"])
-    for i in IDIOM_ORDER:
-        if i in st["idioms_seen"] and f"d_{i}" not in asked:
-            return f"d_{i}"
-    if not state["chief_complaint"]["value"] and "q_open" not in asked:
-        return "q_open"
-    has_dur = st["duration_days"] is not None or any(s.get("duration") for s in state["symptoms"])
-    if not has_dur and "q_duration" not in asked:
-        return "q_duration"
-    if state["patient"]["age_years"] is None and "q_age" not in asked:
-        return "q_age"
-    for q in ("q_other", "q_conditions", "q_medicines"):
-        if q not in asked:
-            return q
-    return None
+    yn = st.get("yn_mode")
+
+    def candidates():
+        for i in IDIOM_ORDER:
+            if i in st["idioms_seen"] and f"d_{i}" not in asked:
+                yield f"d_{i}"
+        for q in st.get("queue", []):
+            if q not in asked and not (q in _FIELD_OF and _has(state, _FIELD_OF[q])):
+                yield q
+        if not state["chief_complaint"]["value"]:
+            if yn:
+                yield from (q for q in ("yn_chest", "yn_breath") if q not in asked)
+            elif "q_open" not in asked:
+                yield "q_open"
+        if not _has(state, "duration") and "q_duration" not in asked:
+            yield "q_duration"
+        if not _has(state, "age") and "q_age" not in asked:
+            yield "q_age"
+        for q in ("q_other", "q_conditions", "q_medicines"):
+            if q not in asked:
+                yield q
+
+    skipped: list[str] = []
+    for q in candidates():
+        if not yn or q.startswith("yn_"):
+            return q, skipped + [q]
+        y = _YN_OF.get(q)
+        if y is None or y in asked:
+            skipped.append(q)
+            continue
+        return y, skipped + [q, y]
+    return None, skipped
 
 
-_EXPECT = {"q_duration": "duration", "q_age": "number", "readback": "yes_no"}
+def _apply_yn(state: dict, key: str, ans: str | None) -> None:
+    """Record a yes/no answer and turn it into intake facts (conservative: a 'yes' to a two-part question counts as
+    the more serious part, so red-flag rules never miss it)."""
+    st = state["_internal"]
+    st["yn"][key] = ans or "unclear"
+    if ans is None:
+        return
+    if ans == "yes" and key in _YN_SIGN:
+        sg = _YN_SIGN[key]
+        if sg not in st["signs"]:
+            st["signs"] = sorted(set(st["signs"]) | {sg})
+            st["yn_signs"] = sorted(set(st["yn_signs"]) | {sg})
+        cc = state["chief_complaint"]
+        label = {"yn_chest": "chest pain", "yn_breath": "breathlessness"}.get(key)
+        if label and not cc["value"]:
+            cc.update(value=label, said=None, status="heard")
+            state["symptoms"] = state["symptoms"] or [
+                {"name": label, "said": None, "onset": None, "duration": None, "severity": None, "location": None,
+                 "character": None, "pattern": None, "associated": [], "status": "heard"}]
+    if ans == "yes" and (key == "yn_chest" or (key == "yn_other" and "chest" in st["signs"])):
+        st["queue"].append("yn_breath")
+    h = state["history"]
+    if key == "yn_duration":
+        st["duration_coarse"] = "over3" if ans == "yes" else "upto3"
+        if ans == "yes" and st["duration_days"] is None:
+            st["duration_days"] = 4  # "more than three days": enough for the fever-over-three-days rule (U1)
+    elif key == "yn_age":
+        st["age_coarse"] = "over60" if ans == "yes" else "under60"
+        if ans == "yes":
+            st["signs"] = sorted(set(st["signs"]) | {"older"})
+    elif key == "yn_conditions":
+        if ans == "yes":
+            h["conditions"]["value"].append("sugar or BP (yes/no answer, which one not known)")
+        h["conditions"]["status"] = "heard"
+    elif key == "yn_medicines":
+        if ans == "yes":
+            h["medicines_taken"]["value"].append("yes, names not known (yes/no answer)")
+        h["medicines_taken"]["status"] = "heard"
+
+
+def _misheard(state: dict) -> tuple[str, str]:
+    """(action, key) after a turn that was empty or not understood. Two in a row switch to yes/no questions; five
+    in a row end the call politely, keeping what was collected (like three silences)."""
+    st = state["_internal"]
+    st["stt_fail"] += 1
+    if st["stt_fail"] >= 5:
+        state["phase"] = "done"
+        return "done", "bye_silence"
+    if st["stt_fail"] < 2:
+        return "repeat", "q_repeat"
+    st["yn_mode"] = True
+    last = st.get("last_q")
+    if last in ("readback", "q_fix"):
+        return "confirm", "readback"
+    if last and last.startswith("yn_"):
+        return "ask", last
+    y = "yn_chest" if _base(last) == "q_open" and not state["chief_complaint"]["value"] else _YN_OF.get(_base(last))
+    if y and y not in st["asked"]:
+        st["asked"].append(y)
+        if y == "yn_chest":
+            st["queue"].append("yn_breath")
+        return "ask", y
+    q, marks = _next_question(state)
+    st["asked"] += marks
+    if q is None:
+        state["phase"] = "confirming"
+        return "confirm", "readback"
+    return "ask", q
+
+
+_EXPECT = {"q_duration": "duration", "q_duration_retry": "duration", "q_age": "number", "q_age_retry": "number",
+           "readback": "yes_no"}
 
 
 def _validate(req: dict) -> None:
@@ -400,6 +548,8 @@ def turn(req: dict) -> dict:
     hint = req.get("ui_lang_hint") if req.get("ui_lang_hint") in LANGS else None
     state = copy.deepcopy(req.get("state")) if req.get("state") else _new_state(hint or "hi")
     st = state["_internal"]
+    for k, v in _r4_defaults().items():
+        st.setdefault(k, v)
     lang = state["lang"]["reply"]
     debug: dict = {"fallback": False}
     action, key, kw, prefix = "ask", None, {}, None
@@ -435,17 +585,45 @@ def turn(req: dict) -> dict:
         text = (tr.get("text") or "").strip()
         state["no_speech_count"] = 0
         tl = tr.get("language")
-        if tl in LANGS and (tr.get("language_confidence") is None or tr["language_confidence"] >= 0.6):
-            lang = tl
-            state["lang"].update(reply=lang, script=SCRIPT[lang])
+        if tl in LANGS and (tr.get("language_confidence") is None or tr["language_confidence"] >= 0.6) and text:
+            # prompt spec: reply in the main language, switch only after two turns in a row in another one. The
+            # first utterance sets the main language (the greeting's language was only a guess or a UI hint).
+            first = not any(t["who"] == "user" for t in state["transcript_log"])
+            if tl == lang:
+                st["lang_cand"] = None
+            else:
+                cand = st.get("lang_cand")
+                n = cand[1] + 1 if cand and cand[0] == tl else 1
+                if first or n >= 2:
+                    lang, st["lang_cand"] = tl, None
+                    state["lang"].update(reply=lang, script=SCRIPT[lang])
+                else:
+                    st["lang_cand"] = [tl, n]
         audio = req.get("audio") or {}
         if (audio.get("speech_rate_wpm") or 999) < 110:
             st["slow"] = True
+        prev = st.get("pending")
+        field = _FIELD_OF.get(prev)
+        pre_age, pre_dur = state["patient"]["age_years"], st["duration_days"]
+        misheard = not text
         if not text:
-            action, key = "repeat", "q_repeat"
+            action, key = _misheard(state)
         else:
             state["transcript_log"].append({"turn": req["turn"], "who": "user", "text": text, "language": tl})
+            sig_before = set(st["signs"])
             _apply_rules(state, text)
+            # a lone number answers a question that asked for one ("chaalis" to "how old?")
+            n = rules.bare_number(text)
+            if n is not None and state["patient"]["age_years"] is None and (
+                    field == "age" or ("age" in st["unclear"] and state["phase"] == "confirming")):
+                state["patient"]["age_years"] = n
+            elif n is not None and prev == "q_duration_retry" and st["duration_days"] is None:
+                st["duration_days"], st["duration_said"] = float(n), text
+                if state["symptoms"] and not state["symptoms"][0].get("duration"):
+                    state["symptoms"][0]["duration"] = rules._fmt_days(n)
+            yn_ans = rules.yes_no(text)
+            if prev in LINES and prev.startswith("yn_"):
+                _apply_yn(state, prev, yn_ans)
             last_q = LINES[st["pending"]]["en"] if st.get("pending") in LINES else None
             u, meta = _llm_understand(state, text, last_q)
             debug.update(meta)
@@ -484,16 +662,41 @@ def turn(req: dict) -> dict:
                 state["phase"] = "escalated"
                 self_harm = any(f["id"] == "E9_self_harm" for f in new_e)
                 key = "esc_self_harm" if self_harm else "esc_emergency" if new_e else "esc_urgent"
+                if phone and new_e:  # the call is being bridged (transfer: true): don't tell them to dial now
+                    key += "_transfer"
                 level = "emergency" if new_e else "urgent"
                 call = {"number": "14416", "label": "Tele-MANAS"} if self_harm else \
                     {"number": "112", "label": "Emergency"} if new_e else None
                 escalation = {"level": level, "message": None, "call": call,
                               "reason_clinician": "; ".join(f["id"] for f in (new_e or new_u))}
+            # prompt spec: a red-flag word that may have been misheard is asked about directly, never ignored
+            maybe = [] if new_flags else [c for c, _ in _RF_ASK if c in rules.maybe_flags(
+                text, tr.get("alternatives")) and c not in st["signs"] and c not in st["rf_asked"]]
+            understood = bool(set(st["signs"]) - sig_before or rules.idioms(text) or yn_ans or
+                              state["patient"]["age_years"] != pre_age or st["duration_days"] != pre_dur or
+                              (u and (u.get("symptoms") or u.get("chief_complaint_en"))))
+            low_conf = isinstance(tr.get("stt_confidence"), (int, float)) and tr["stt_confidence"] < 0.35
+            if action == "escalate":
+                pass
+            elif maybe:
+                st["rf_asked"].append(maybe[0])
+                key = dict(_RF_ASK)[maybe[0]]
+                st["asked"].append(key)
+                if state["phase"] == "confirming":
+                    state["phase"] = "collecting"
+            elif (low_conf or (st["yn_mode"] and prev and prev.startswith("yn_"))) and not understood:
+                misheard = True
+                action, key = _misheard(state)  # garbled: same path as an empty transcript
             elif state["phase"] == "confirming":
                 conf = (u or {}).get("confirmation", "none")
-                yes = conf == "yes" or (not u and re.search(r"\b(haan|ha|han|yes|sahi|theek|thik|hyan|hya|hyaa|correct)\b",
-                                                            light(text)))
-                if yes:
+                yes = conf == "yes" or (not u and yn_ans == "yes")
+                changed = state["patient"]["age_years"] != pre_age or st["duration_days"] != pre_dur
+                if changed and not u:  # rules-only correction ("na, tin din", or the age they were asked for)
+                    if st["duration_days"] != pre_dur and state["symptoms"]:
+                        state["symptoms"][0]["duration"] = rules._fmt_days(st["duration_days"])
+                        state["symptoms"][0]["status"] = "corrected"
+                    action, key = "confirm", "readback"
+                elif yes:
                     action, key = "done", "done"
                     state["phase"] = "done"
                     for f in ("chief_complaint",):
@@ -509,7 +712,17 @@ def turn(req: dict) -> dict:
             elif (u or {}).get("out_of_scope_question"):
                 prefix = _line("out_of_scope", lang)
             if action == "ask" and key is None:
-                q = _next_question(state)
+                # an answer to "since when?" / "how old?" that did not parse: re-ask once in a simpler form with
+                # examples; if that fails too, mark it unclear and move on (the read-back names it). Never on a
+                # red-flag turn: escalation comes first.
+                if field and not _has(state, field) and not new_flags:
+                    if prev.endswith("_retry") or field in st["reasked"]:
+                        st["unclear"][field] = text
+                    else:
+                        st["reasked"].append(field)
+                        st["queue"].append(f"q_{field}_retry")
+                q, marks = _next_question(state)
+                st["asked"] += marks
                 if q is None:
                     action, key = "confirm", "readback"
                     state["phase"] = "confirming"
@@ -517,10 +730,17 @@ def turn(req: dict) -> dict:
                     key = q
                     if q == "q_age":
                         key = "q_age_other" if state["speaker"]["role"] == "caregiver" else "q_age_self"
-                    st["asked"].append(q)
-            if action == "confirm":
-                kw = {"s": st.get("summary_patient") or _fallback_readback(state, lang)}
-                kw_roman = st.get("summary_patient_roman") if st.get("summary_patient") else kw["s"]
+        if not misheard:
+            st["stt_fail"] = 0
+    for f in [f for f in st["unclear"] if _has(state, f)]:
+        del st["unclear"][f]
+    st["queue"] = [q for q in st["queue"] if q not in st["asked"]]
+    if action == "confirm":
+        if st.get("summary_patient"):
+            kw, kw_roman = {"s": st["summary_patient"]}, st.get("summary_patient_roman")
+        else:
+            s_nat, s_rom = _fallback_readback(state, lang)
+            kw, kw_roman = {"s": s_nat}, s_rom
 
     if state["phase"] == "escalated" and action == "ask" and not new_flags:
         state["phase"] = "collecting"
@@ -531,19 +751,23 @@ def turn(req: dict) -> dict:
         roman_out = _line(key, lang, name=kw["name"])[1]
     if prefix:
         text_out, roman_out = prefix[0] + " " + text_out, prefix[1] + " " + roman_out
+    if action == "confirm" and st["unclear"]:  # name what we could not understand, so they can say it now
+        u_key = "unclear_both" if len(st["unclear"]) > 1 else f"unclear_{next(iter(st['unclear']))}"
+        ut, ur = _line(u_key, lang)
+        text_out, roman_out = text_out + " " + ut, roman_out + " " + ur
     if escalation:
         escalation["message"] = text_out
         # an urgent (not emergency) escalation must not swallow a pending idiom question (e.g. the self-harm check
         # inside the ghabrahat/tension question): ask it in the same turn
         if escalation["level"] == "urgent":
-            q = _next_question(state)
+            q, _ = _next_question(state)
             if q and q.startswith("d_"):
                 qt, qr = _line(q, lang)
                 text_out, roman_out = text_out + " " + qt, roman_out + " " + qr
                 st["asked"].append(q)
                 key = q
     if phone:  # listening only: say emergency numbers digit by digit ("1 1 2")
-        text_out = _spell_numbers(text_out)
+        text_out, roman_out = _spell_numbers(text_out), _spell_numbers(roman_out)
         if escalation:
             escalation["message"] = _spell_numbers(escalation["message"])
     if escalation:
@@ -551,6 +775,9 @@ def turn(req: dict) -> dict:
         escalation["calls"] = [{"number": "112", "label": "Emergency"}] if (escalation.get("call") or {}).get(
             "number") == "14416" else []
     st["pending"] = key if key in LINES else None
+    if key and (key.startswith(("q_", "d_", "yn_", "greet")) or key == "readback") and \
+            key not in ("q_repeat", "q_no_speech"):
+        st["last_q"] = key
     state["transcript_log"].append({"turn": req["turn"], "who": "agent", "text": roman_out, "language": lang})
     if len(state["transcript_log"]) > 40:
         state["transcript_log"] = state["transcript_log"][-40:]
@@ -575,6 +802,8 @@ def turn(req: dict) -> dict:
     exp_kind = "none" if action == "done" else _EXPECT.get(key, "free")
     if key and key.startswith("q_age"):
         exp_kind = "number"
+    if key and key.startswith("yn_"):
+        exp_kind = "yes_no"
     # agent's own time; pacing/rate-limit waits (batch runs only) are reported separately
     debug["latency_ms"] = round((time.perf_counter() - t0) * 1000) - int(debug.get("wait_ms") or 0)
     debug["rules_signs"] = st["signs"]
