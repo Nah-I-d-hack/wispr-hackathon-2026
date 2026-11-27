@@ -16,10 +16,12 @@ AGENT_URL=http://localhost:9000 .venv/bin/uvicorn app.server:app --port 8000   #
 
 | part | now | next |
 |---|---|---|
-| speech-to-text | browser Web Speech API, locked to the chosen language (`hi-IN`, `bn-IN`, `en-IN`) | K2 picks an engine that handles code-mixing and detects the language |
-| language ID | the language the user picked, plus a script-based check for code-mixing | from the K2 engine |
+| speech-to-text | **Wispr Flow** when `WISPR_API_KEY` is in `.env`: the app records, detects the end of speech, and `/api/stt` converts to 16 kHz WAV and sends it with the symptom vocabulary + the agent's last question. Without a key (or if Wispr fails), the browser Web Speech API | K2 eval tunes the end-of-speech timing and vocabulary |
+| language ID | Wispr's `detected_language`; otherwise the language the user picked, plus a script check for code-mixing | |
 | text-to-speech | browser `speechSynthesis`; falls back to captions if the device has no voice for that language | K2 engine with proper Hindi/Bengali voices |
 | agent | `app/mock_agent.py`: canned questions + keyword red flags, **only a test double** | R3, via `AGENT_URL` |
+
+**Desk view:** open `/desk` on the front-desk screen. It shows live intakes, emergencies first. A new emergency flashes (and beeps if sound is on) until someone presses "Seen, going now". The app's escalation shows the agent's number (e.g. Tele-MANAS 14416) with 112 as a second button.
 
 **Behaviour already in place:**
 - **Hands-free:** after the agent speaks, the app listens again on its own.
