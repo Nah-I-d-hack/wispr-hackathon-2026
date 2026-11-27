@@ -17,8 +17,8 @@ LEX: dict[str, list[str]] = {
               "heart"],
     "heavy": ["bhaari", "bhari", "dabav", "dabaav", "pressure", "crushing", "heavy", "chepe", "chap", "weight",
               "jakad"],
-    "sweating": ["pasina", "paseena", "pasine", "ghaam", "gham", "ghamchhe", "ghamche", "ghame", "ghamte", "sweat",
-                 "sweating", "sweaty"],
+    "sweating": ["pasina", "paseena", "pasine", "ghaam", "gham", "ghamchhe", "ghamche", "ghame", "ghamte", "ghaamchhe",
+                 "ghaamochhe", "ghaamte", "ghaamote", "gheme", "sweat", "sweating", "sweaty"],
     "breathless": ["saans phool", "saans phul", "saans * phool", "saans * phul", "saans lene", "saans ki takleef", "saans nahi", "shash", "shwas",
                    "swas", "hapani", "haanf", "breathless", "short of breath", "breathing", "breathe", "dum ghut",
                    "hanpan"],
@@ -116,7 +116,7 @@ LEX: dict[str, list[str]] = {
                    "abdominal pain", "pet me dard", "pet mein * dard"],
     "severe": ["bahut", "tez", "khub", "severe", "bere jachhe", "badh raha", "barchhe", "increasing", "worse",
                "unbearable", "zyada"],
-    "diarrhoea": ["dast", "loose motion", "patla paikhana", "pet kharap", "diarrhoea", "diarrhea", "patli tatti"],
+    "diarrhoea": ["dast", "loose motion", "patla paikhana", "pet kharap", "diarrh", "patli tatti"],
     "low_urine": ["peshab kam", "peshab bahut kam", "peshab nahi", "prosrab kom", "prosrab hochhe na",
                   "not peeing", "no urine", "little urine"],
     "cant_keep_fluids": ["paani bhi ulti", "pani bhi ulti", "kuch nahi tik", "jol o bomi", "can't keep",
@@ -150,20 +150,30 @@ _NEG = {"nahi", "nahin", "nai", "na", "nei", "nay", "no", "not", "never", "nope"
 
 # words matched as prefixes (sweat -> sweating, sweaty); everything else must match a whole word
 _PREFIX = {"sweat", "confus", "vomit", "faint", "numb", "tingl", "bleed", "swell", "weak", "breath", "ghabra",
-           "jhunjhun", "drows", "ghamch", "ghora", "ghura"}
+           "jhunjhun", "drows", "ghamch", "ghora", "ghura", "diarrh"}
 # words whose fuzzy skeleton collides with a common word (buker = chest vs bukhar = fever): match the spelling exactly
-_EXACT = {"buker", "bukhar", "bukhaar", "bukar", "bukhaara"}
+_EXACT = {"buker", "bukhar", "bukhaar", "bukar", "bukhaara",
+          # Bengali sweating words sit on the skeleton of 'ghum-' (sleep) and 'ghoom-' (spin): ghamte = ghumte = ghoomta
+          "ghame", "ghamte", "ghaamte", "ghamche", "ghamchhe", "ghaamchhe", "ghaamochhe", "ghaamote", "gheme"}
+# everyday words whose skeleton lands on a sign word: never a fuzzy match for a sign ('teen din dhore' = 'for three
+# days', not diarrhoea; 'kamra ghoomta hai' = the room spins, not sweating; 'chinta' = worry, not chest). If a lexicon
+# phrase uses one of these words itself, it matches that spelling exactly.
+_NOT_FUZZY = {"dhore", "dhora", "dhorechhe", "dore", "dure", "dhire", "dheere", "dhaara", "dari", "dori", "daru",
+              "ghoomta", "ghoomte", "ghoome", "ghume", "ghumte", "ghumta", "ghumchhe", "ghumiye", "ghumi", "gechhe",
+              "gumti", "ghure", "ghora", "chinta", "chhota", "chhoti", "chhote", "kaisa", "kaise", "kaisi", "kisi", "kaunsi", "bare",
+              "bere", "very", "worry", "have", "hobe", "could", "body", "sense", "dono", "dijiye", "taken", "thakun",
+              "there", "tara", "troubling", "vaakya", "benke", "paren", "baba", "sushthe", "sustho", "sushtho"}
 
 
 def _compile(phrase: str) -> list[str]:
     """'*' = gap of up to 3 words. Words in _PREFIX match as spelled prefixes ('~weak' matches 'weakness' but not
-    'bukhar', whose skeleton happens to start like weak's); words in _EXACT match their spelling; the rest match on
-    fuzzy skeletons."""
+    'bukhar', whose skeleton happens to start like weak's); words in _EXACT and _NOT_FUZZY match their spelling; the
+    rest match on fuzzy skeletons."""
     out = []
     for w in light(phrase).split():
         sk = skeleton_word(w)
         # short skeletons collide too easily (weak = buk, feel = fall): those words match their spelling only
-        exact = w in _EXACT or (len(sk) <= 3 and not sk.isdigit())
+        exact = w in _EXACT or w in _NOT_FUZZY or (len(sk) <= 3 and not sk.isdigit())
         out.append("*" if w == "*" else "~" + w if w in _PREFIX else "=" + w if exact else sk)
     return out
 
@@ -178,7 +188,7 @@ def _tok_eq(p: str, t: tuple[str, str]) -> bool:
         return raw.startswith(p[1:])
     if p.startswith("="):
         return raw == p[1:]
-    return skel == p
+    return skel == p and raw not in _NOT_FUZZY
 
 
 def _find(pattern: list[str], toks: list[tuple[str, str]]) -> tuple[int, int] | None:
@@ -225,23 +235,116 @@ def match_concepts(text: str, lex: dict[str, list[list[str]]]) -> tuple[set[str]
 
 
 # ---------------------------------------------------------------- numbers, ages, durations
-_NUM = {"ek": 1, "one": 1, "do": 2, "dui": 2, "two": 2, "teen": 3, "tin": 3, "three": 3, "char": 4, "chaar": 4,
-        "four": 4, "paanch": 5, "panch": 5, "pach": 5, "five": 5, "chhe": 6, "chhah": 6, "chhoy": 6, "six": 6,
-        "saat": 7, "sat": 7, "seven": 7, "aath": 8, "at": 8, "eight": 8, "nau": 9, "noy": 9, "nine": 9, "das": 10,
-        "dosh": 10, "ten": 10, "pachchis": 25, "tees": 30, "tirish": 30, "chaalis": 40, "chollish": 40,
-        "pachaas": 50, "ponchash": 50, "saath": 60, "shat": 60, "sattar": 70, "sottor": 70, "assi": 80, "ashi": 80,
-        "atshotti": 68, "nabbe": 90, "nobboi": 90, "a": 1, "an": 1, "twenty": 20, "thirty": 30, "forty": 40,
-        "fifty": 50, "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90, "bees": 20, "kuri": 20}
+# Number words 1-100, Hindi and Bengali: common romanised spellings plus what agent/text.py makes of the native-script
+# word (Hindi native 75 -> "pachahattar", Bengali native 75 -> "ponchaattor"). Lookup is exact first, then, for words
+# of 5+ letters, on a loose key that ignores vowel length, doubled letters and ch/chh ("pachattar" = "pachhattar").
+# Short words stay exact so "car", "no", "so" never become numbers.
+_NUM_WORDS: dict[int, str] = {
+    1: "ek one", 2: "do dui two", 3: "teen tin tiin three", 4: "char chaar four",
+    5: "paanch panch pach paach five", 6: "chhe chhah chhay chhoy choy chhoj six", 7: "saat sat seven",
+    8: "aath aat at eight", 9: "nau noy noj nine", 10: "das dus dosh ten",
+    11: "gyaarah gyarah gyara egaro egharo egaaro eleven", 12: "baarah barah baaro baro twelve",
+    13: "terah tero thirteen", 14: "chaudah chaudha choudah chodah choddo chouddo chodd fourteen",
+    15: "pandrah pandra pondro ponero panero fifteen", 16: "solah sholo sixteen",
+    17: "satrah satra sotero satero seventeen", 18: "athaarah athara atharah atharo aathaaro eighteen",
+    19: "unnees unees unniis unish unis nineteen", 20: "bees biis bis kuri kudi twenty",
+    21: "ikkees ikkis ekkis ikkiis ekush ekus", 22: "baaees baees bais baaiis baish",
+    23: "teis teyis teees teiis teish", 24: "chaubees chaubis chobis chaubiis chobbish chobish",
+    25: "pachchees pachchis pachees pachis pachchiis pochish ponchish panchish",
+    26: "chhabbees chhabbis chabbis chhabbiis chhaabbish chhabbish",
+    27: "sattaees sattais sattaaiis satash saataash sataish",
+    28: "atthaees atthais athais atthaaiis athash aathaash athaish", 29: "untees untis unatiis unotrish untrish",
+    30: "tees tis tiis tirish tiris", 31: "ikattees ikattis iktees iktis ikatiis ekotrish ektrish",
+    32: "battees battis battiis botrish batrish", 33: "taintees taintis tentis taintiis tetrish",
+    34: "chauntees chauntis chontis chauntiis choutrish chowtrish chautrish",
+    35: "paintees paintis pentis paintiis poyotrish pointrish ponyotrish ponjotrish",
+    36: "chhattees chhattis chattis chhattiis chhotrish chhatrish",
+    37: "saintees saintis sentis saintiis saitrish saintrish saanitrish",
+    38: "adtees adtis artis adatiis atotrish attrish aatotrish",
+    39: "untaalees untalis unataaliis unochollish unchollish",
+    40: "chaalees chaalis chalis chaaliis chollish challish cholish",
+    41: "iktaalees iktalis ikataaliis ekchollish ekochollish",
+    42: "bayaalees bayalis byalis bayaaliis beyallish biyallish bijaallish",
+    43: "taintaalees taintalis tentalis taintaaliis tetallish tetaallish",
+    44: "chavaalees chavalis chawalis chauvalis chavaaliis chuyallish chujaallish",
+    45: "paintaalees paintalis pentalis paintaaliis poyotallish ponyotallish ponjotaallish",
+    46: "chhiyaalees chhiyalis chiyalis chhiyaaliis chhechollish",
+    47: "saintaalees saintalis sentalis saintaaliis satchollish saatochollish",
+    48: "adtaalees adtalis artalis adataaliis atchollish aatochollish",
+    49: "unchaas unchas unachaas unoponchash unponchash unoponchaash",
+    50: "pachaas pachas ponchash panchash ponchas ponchaash", 51: "ikyaavan ikyavan ekyavan ekanno ekanna ekaann",
+    52: "baavan bavan baawan bahanno bahanna baahaann", 53: "tirpan tirapan trepan tippanno teppanno tippaann",
+    54: "chauvan chauwan chovan chuyanno chujaann", 55: "pachpan pachapan ponchanno pochpanno ponchaann",
+    56: "chhappan chappan chhappanno chhaappaann", 57: "sattaavan sattavan satanno saataann",
+    58: "atthaavan atthavan athavan atanno aataann", 59: "unsath unasath unoshat unshat unoshaat",
+    60: "saath shat shaat sixty", 61: "iksath ikasath ekshotti ekoshotti ekshoti",
+    62: "baasath basath bashotti baashotti", 63: "tirsath tirasath tresath teshotti",
+    64: "chausath chaunsath chonsath chowshotti choushotti chaushotti",
+    65: "painsath pensath poyshotti ponshotti ponjoshotti", 66: "chhiyaasath chhiyasath chiyasath chheshotti",
+    67: "sadsath sarsath sadasath satshotti saatoshotti", 68: "adsath arsath adasath atshotti aatoshotti",
+    69: "unhattar unahattar unosottor unsottor", 70: "sattar satar sottor sattor shottor seventy",
+    71: "ikhattar ikahattar ikattar ekattor ekhattor ekaattor", 72: "bahattar bahatar bahattor baahaattor",
+    73: "tihattar tihatar tiyattor tiattor tijaattor", 74: "chauhattar chohattar chuyattor chujaattor",
+    75: "pachhattar pachattar pachahattar pochattor ponchattor panchattor ponchaattor",
+    76: "chhihattar chihattar chhiyattar chhiyattor chhijaattor",
+    77: "satattar sathattar satahattar satattor saataattor",
+    78: "athattar athhattar athahattar athattor atattor aataattor",
+    79: "unaasi unasi unyaasi unyaasii unyasi unoashi unashi unoaashi", 80: "assi asi assii ashi aashi eighty",
+    81: "ikyaasi ikyasi ikyaasii ekashi ekaashi", 82: "bayaasi bayasi byasi bayaasii birashi biraashi",
+    83: "tiraasi tirasi tiraasii tirashi tiraashi",
+    84: "chauraasi chaurasi chorasi chauraasii churashi chourashi churaashi",
+    85: "pachaasi pachasi pachaasii pochashi ponchashi ponchaashi",
+    86: "chhiyaasi chhiyasi chhiyaasii chhiyashi chhijaashi", 87: "sattaasi sattasi sattaasii satashi saataashi",
+    88: "atthaasi atthasi atthaasii atashi aataashi", 89: "navaasi navasi nawasi navaasii unonobboi unnobboi",
+    90: "nabbe nabe nobboi nabbai ninety", 91: "ikyaanave ikyanave ikyanve ekanobboi ekaanobboi",
+    92: "baanave banave baanve biranobboi biraanobboi", 93: "tiraanave tiranave tiranve tiranobboi tiraanobboi",
+    94: "chauraanave chauranave chauranve churanobboi churaanobboi",
+    95: "pachaanave panchaanave pachanave pachanve ponchanobboi pochanobboi ponchaanobboi",
+    96: "chhiyaanave chhiyanave chhiyanve chhiyanobboi chhijaanobboi",
+    97: "sattaanave sattanave sattanve satanobboi saataanobboi",
+    98: "atthaanave atthanave atthanve atanobboi aataanobboi",
+    99: "ninyaanave ninyanave ninyanve niranobboi niraanobboi", 100: "sau eksho ekosho hundred",
+}
+_EN_TENS = {"twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "sixty": 60, "seventy": 70, "eighty": 80,
+            "ninety": 90}
+_EN_ONES = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9}
+_NUM: dict[str, int] = {"a": 1, "an": 1, **_EN_TENS}
+for _v, _ws in _NUM_WORDS.items():
+    for _w in _ws.split():
+        _NUM[_w] = _v
+
+
+def _nkey(w: str) -> str:
+    """Loose spelling key for number words: ignores vowel length, doubled letters, ch/chh, w/v and y/j."""
+    w = w.replace("ee", "i").replace("oo", "u").replace("chh", "c").replace("ch", "c").replace("w", "v")
+    w = re.sub(r"(.)\1+", r"\1", w.replace("y", "j"))
+    return re.sub(r"(?<=[aeiou])h$", "", w)
+
+
+_NUM_LOOSE: dict[str, int] = {}
+for _w, _v in _NUM.items():
+    if len(_w) >= 5:
+        _NUM_LOOSE.setdefault(_nkey(_w), _v)
 _UNIT_DAYS = {"din": 1, "dino": 1, "dinon": 1, "divas": 1, "day": 1, "days": 1, "hafte": 7, "hafta": 7,
-              "hapta": 7, "week": 7, "weeks": 7, "saptah": 7, "soptaho": 7, "soptah": 7, "saptaho": 7, "mahine": 30, "mahina": 30, "month": 30,
-              "months": 30, "mash": 30, "ghante": 1 / 24, "ghanta": 1 / 24, "hour": 1 / 24, "hours": 1 / 24,
-              "ghonta": 1 / 24, "saal": 365, "sal": 365, "year": 365, "years": 365, "bochhor": 365}
+              "hapta": 7, "week": 7, "weeks": 7, "saptah": 7, "soptaho": 7, "soptah": 7, "saptaho": 7, "mahine": 30,
+              "mahina": 30, "month": 30, "months": 30, "mash": 30, "ghante": 1 / 24, "ghanta": 1 / 24,
+              "hour": 1 / 24, "hours": 1 / 24, "ghonta": 1 / 24, "saal": 365, "sal": 365, "year": 365, "years": 365,
+              "bochhor": 365, "bochor": 365}
+_YEAR_UNITS = ("saal", "sal", "year", "years", "bochhor", "bochor")
 
 
 def _num(w: str) -> float | None:
     if w.isdigit():
         return float(w)
-    return _NUM.get(w)
+    if w in _NUM:
+        return _NUM[w]
+    return _NUM_LOOSE.get(_nkey(w)) if len(w) >= 5 else None
+
+
+def _numbers_joined(t: str) -> str:
+    """'seventy five' / 'seventy-five' -> '75', so the age patterns see one number."""
+    return re.sub(r"\b(" + "|".join(_EN_TENS) + r")[\s-]+(" + "|".join(_EN_ONES) + r")\b",
+                  lambda m: str(_EN_TENS[m.group(1)] + _EN_ONES[m.group(2)]), t)
 
 
 def durations(text: str) -> list[tuple[float, str, bool]]:
@@ -253,8 +356,7 @@ def durations(text: str) -> list[tuple[float, str, bool]]:
         for i, w in enumerate(words[:-1]):
             n = _num(w)
             u = words[i + 1]
-            if n is not None and u in _UNIT_DAYS and not (u in ("saal", "sal", "year", "years", "bochhor")
-                                                          and n > 3):
+            if n is not None and u in _UNIT_DAYS and not (u in _YEAR_UNITS and n > 3):
                 out.append((n * _UNIT_DAYS[u], f"{w} {u}", neg))
         if re.search(r"\b(kal se|kal theke|since yesterday|yesterday)\b", cl):
             out.append((1, "since yesterday", neg))
@@ -278,16 +380,28 @@ def _fmt_days(d: float) -> str:
     return f"{k} day" + ("s" if k != 1 else "")
 
 
+# a number + year unit followed by one of these is a duration ("teen saal se", "dui bochhor dhore"), not an age
+_SINCE = re.compile(r"\s*(?:se|theke|dhore|ago|pehle|age|purana|purani|from|since)\b")
+_AGE_UNIT = r"(?:saal|sal|years?|yrs?|bochhor|bochor|bachhar|baras|varsh|borosh)"
+_AGE_WORD = r"(?:umar|umr|umra|age|boyos|boyosh|boyes|boyesh|bojos|bayas|aged)"
+
+
 def age(text: str) -> int | None:
-    t = light(text)
-    pats = [r"\b(\d{1,3})\s*(?:saal|sal|years?|yrs?|bochhor|boyosh|baras)\b",
-            r"\b(?:umar|umr|age|boyosh|boyesh|aged)\s*(?:hai|is)?\s*(\d{1,3}|[a-z]+)\b",
-            r"\b(?:she|he|i|they)\s*(?:is|am|are)\s*(\d{1,3})\b",
-            r"\b([a-z]+)\s*(?:saal|sal|bochhor)\s*(?:ke|ki|ka|er)?\b", r"\b([a-z]+)\s*years?\s*old\b"]
-    for p in pats:
+    """Patient age ('pachattar saal', 'boyos sottor', 'umar 62', 'seventy-five years old'); never a duration."""
+    t = _numbers_joined(light(text))
+    pats = [(r"\b(\d{1,3})\s*" + _AGE_UNIT + r"\b", True),
+            (r"\b" + _AGE_WORD + r"\b\s*(?:(?:hai|is|holo|hobe)\b\s*)?(\d{1,3}|[a-z]+)\b", False),
+            (r"\b(?:she|he|i|they)\s*(?:is|am|are)\s*(\d{1,3})\b", False),
+            (r"\b([a-z]+)\s*(?:saal|sal|bochhor|bochor|baras)\s*(?:ke|ki|ka|er)?\b", True),
+            (r"\b([a-z]+)\s*years?\s*old\b", False)]
+    for p, unit in pats:
         for m in re.finditer(p, t):
             v = _num(m.group(1))
-            if v is not None and 0 < v < 120 and not (v < 12 and re.search(r"saal se|years? ago", t)):
+            if v is None or not 0 < v < 120:
+                continue
+            if unit and _SINCE.match(t, m.end()):
+                continue
+            if not (v < 12 and re.search(r"saal se|years? ago", t)):
                 return int(v)
     m = re.search(r"\b(\d{1,2}|[a-z]+)\s*(?:month|months|mahine|mash)\s*(?:old|ka|ki|er)\b", t)
     if m and _num(m.group(1)) is not None:
@@ -296,9 +410,13 @@ def age(text: str) -> int | None:
 
 
 def bare_number(text: str) -> int | None:
-    """A lone number answer ('chaalis', '62', 'two') to a question that asked for one; None if absent or several."""
-    nums = [n for w in re.findall(r"[a-z0-9]+", light(text)) if w not in ("a", "an")
-            for n in [_num(w)] if n is not None]
+    """A lone number answer ('chaalis', '62', 'two', 'pachattar') to a question that asked for one. None if absent,
+    several, or part of a duration: 'teen din se' answers 'since when?', never 'how old?'."""
+    words = re.findall(r"[a-z0-9]+", _numbers_joined(light(text)))
+    if any(w in _UNIT_DAYS and w not in _YEAR_UNITS for w in words) or durations(text) or \
+            re.search(r"\b(?:" + "|".join(_YEAR_UNITS) + r")\b" + _SINCE.pattern, " ".join(words)):
+        return None
+    nums = [n for w in words if w not in ("a", "an", "at") for n in [_num(w)] if n is not None]
     return int(nums[0]) if len(nums) == 1 and 0 < nums[0] < 120 else None
 
 
