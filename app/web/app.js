@@ -333,4 +333,8 @@ setLang("hi");
 fetch("/v1/health").then((r) => r.json()).then((h) => {
   sttMode = h.stt === "wispr" && window.MediaRecorder ? "wispr" : "browser";
   $("meta").textContent = `speech-to-text: ${sttMode === "wispr" ? "Wispr Flow" : "browser"} · agent: ${h.agent}`;
+  const notes = [];
+  if ((h.keys_missing || []).includes("WISPR_API_KEY")) notes.push("Wispr key not set: using the browser's speech recognition.");
+  if ((h.keys_missing || []).includes("GEMINI_API_KEY")) notes.push("Gemini key not set: the agent runs on its safety rules only.");
+  if (notes.length) { $("keys").textContent = notes.join(" "); $("keys").hidden = false; }
 }).catch(() => {});

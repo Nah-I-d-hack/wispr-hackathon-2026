@@ -1,0 +1,27 @@
+# Start everything with:  docker compose up --build   then open http://localhost:8000 in Chrome
+# Keys are optional. Put them in a .env file next to this one (see .env.example); without them the app still runs:
+#   no WISPR_API_KEY  -> the browser's speech recognition is used (and Whisper on the phone-call screen)
+#   no GEMINI_API_KEY -> the intake agent runs on its safety rules only
+services:
+  bolo:
+    build: .
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      WISPR_API_KEY: ${WISPR_API_KEY:-}
+      STT_ENGINE: ${STT_ENGINE:-whisper}     # phone-call screen: whisper (no key) or wispr (needs WISPR_API_KEY)
+      WHISPER_MODEL: ${WHISPER_MODEL:-small}
+      HF_HOME: /models
+    volumes:
+      - models:/models                       # the speech model is downloaded once, on first start
+      - outputs:/bolo/outputs                # session logs and latency metrics
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/v1/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+
+volumes:
+  models:
+  outputs:

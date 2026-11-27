@@ -48,15 +48,28 @@ DESK: dict[str, dict] = {}  # session_id -> latest summary for the desk view (in
 
 def _log(name: str, row: dict) -> None:
     p = LOGS / name
-    p.parent.mkdir(parents=True, exist_ok=True)
-    with p.open("a", encoding="utf-8") as f:
-        f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    try:  # logging must never break a turn (read-only or unwritable disk, e.g. a container mount)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        with p.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    except OSError as e:
+        print(f"[K] log write failed ({name}): {e}", flush=True)
 
 
 @app.get("/v1/health")
-def health() -> dict:
+async def health() -> dict:
+    """What is running, and which optional keys are missing (the app works without any of them)."""
+    llm = None
+    if AGENT_URL:
+        try:
+            async with httpx.AsyncClient(timeout=1.5) as c:
+                llm = (await c.get(f"{AGENT_URL}/v1/health")).json().get("llm")
+        except (httpx.HTTPError, ValueError):
+            llm = None
+    missing = [k for k, ok in (("WISPR_API_KEY", wispr.available()), ("GEMINI_API_KEY", llm is not False)) if not ok]
     return {"ok": True, "contract": mock_agent.CONTRACT, "agent": AGENT_URL or "mock",
-            "stt": "wispr" if wispr.available() else "browser"}
+            "stt": "wispr" if wispr.available() else "browser", "call_stt": stt_mod.engine_name(), "llm": llm,
+            "keys_missing": missing}
 
 
 class AgentBadRequest(Exception):
