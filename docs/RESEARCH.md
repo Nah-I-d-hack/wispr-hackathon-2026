@@ -35,8 +35,9 @@ ASHA workers and tele-consultation (e.g. eSanjeevani) are natural later receiver
 - *People over 60:* about **13.8 crore in 2021 (10.1% of the population)**,
   projected to **19.4 crore (13.1%) by 2031**. Source: NSO (MoSPI), *Elderly in India 2021*, Table 3.1, which takes
   the figures from the Technical Group on Population Projections 2011-2036. These are projections for 2021, not a
-  count; there has been no census since 2011. The "15 crore over 60" in the Impact draft has no source: use 13.8 crore
-  (2021).
+  count; there has been no census since 2011. The newer figure used on the deck and in the Impact answer: **14.9 crore (149 million, 10.5%) on 1 July 2022**, UNFPA &
+  IIPS, *India Ageing Report 2023* ([PDF](https://india.unfpa.org/sites/default/files/pub-pdf/iar_2023_rgb_web.pdf)), so the
+  Impact draft's "about 15 crore" is sourced.
 - *Yearly OPD visits, all India:* **not found.** Neither MoHFW's Annual Report 2023-24 nor its "Initiatives &
   Achievements 2025" gives a national yearly outpatient count; HMIS publishes facility-level data only. Cut from the
   deck rather than estimated.
