@@ -32,3 +32,21 @@ keeps emergencies working when the network or the API fails.
   rate-limit pacing and is not comparable.
 - Small sets (19 held-out emergencies): one case moves recall by 5 points.
 - The judge for "follow-up asked" (baselines only) is the same Gemini model.
+
+## Update, 15 Nov: LLM safety net (U9) and latency (run `20261115-151902`)
+
+- **U9 as first built** (Gemini says urgent or emergency, no rule fired -> "see a doctor today") caught nothing extra
+  on these sets and added false "see a doctor today" on harmless cases: 0/17 -> 3/17 on the main set (two weeks of
+  tiredness, tingling feet in a diabetic, a two-month neck lump). It now fires only on the model's **emergency**
+  judgement (still raised as urgent). Not yet re-measured.
+- **Latency got worse and unstable**: agent p50 3.2 s / 2.2 s, p95 6-8 s (vs 1.5 s / 2.0 s earlier the same day;
+  live spot check 1.4-4.8 s). The free-tier model's speed varies by time of day. With a 3 s timeout about 10% of
+  turns fell back to rules alone, and **both held-out emergencies missed in this run (en-h02, bn-h01) were on
+  fallback turns** where the rules lacked the phrasing ("face looks crooked, can't lift her arm"; Bengali "chokhe
+  jhapsa... hata jachhe na"). Standard stroke-sign phrasings were then added to the rules (rules-only held-out
+  emergency recall 68% -> 79%, on a set that is no longer untouched).
+- Lesson for the build: **the rule layer has to carry the common emergency phrasings on its own**, because the LLM
+  won't always answer in time. In the phone version, K's filler lines cover the wait; the timeout stays at 3 s.
+- Plain chatbot in the same run: 59% / 88% of harmless cases got some flag, 10 + 5 replies named a condition or
+  medicine.
+

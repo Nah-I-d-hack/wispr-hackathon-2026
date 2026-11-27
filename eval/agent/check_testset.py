@@ -17,6 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 LANGS = {"hi", "bn", "en"}
 SPEAKERS = {"self", "caregiver", "health_worker"}
+MODEL_ONLY = {"U9_llm_concern"}  # raised by the LLM safety net, not by a rule: no positive case required
 
 
 def safety_ids() -> tuple[set[str], set[str], set[str]]:
@@ -70,7 +71,7 @@ def main() -> int:
     for e in sorted(E):
         if pos[e] < 2:
             errors.append(f"coverage: {e} has {pos[e]} positive cases (need 2)")
-    for u in sorted(U):
+    for u in sorted(U - MODEL_ONLY):
         if pos[u] < 1:
             errors.append(f"coverage: {u} has no positive case")
     for i in sorted(I):

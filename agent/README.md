@@ -1,6 +1,6 @@
 # agent/: Bolo intake agent (R3)
 
-*[R]* Speaks contract C1 (`contracts/INTAKE.md`). Transcript in; next utterance, intake state and red flags out.
+*[R]* Speaks contract C1 1.1 (`contracts/INTAKE.md`; 1.0 clients still work). Transcript in; next utterance, intake state and red flags out.
 
 ```bash
 python -m agent.server                      # POST /v1/turn, GET /v1/health on :9000 (stdlib only)
@@ -35,3 +35,12 @@ patient read-back get simpler.
 | `AGENT_LLM_TIMEOUT` / `AGENT_LLM_RETRIES` | `3.0` / `0` | live turn budget |
 | `AGENT_NO_LLM` | unset | `1` = rules only |
 | `AGENT_LLM_MIN_INTERVAL` | `0` | pacing for batch runs on a free-tier key (eval uses 4 s) |
+
+## Contract 1.1 (phone-style calls)
+
+- `channel: phone_in | phone_out`: phone greeting, no screen references, emergency numbers spoken digit by digit
+  ("1 1 2"); emergencies set `escalation.transfer: true`. `phone_out` + `context.patient_first_name` greets by name.
+- Every reply carries `expect.fillers` (3 short acknowledgements in the session language, none after an escalation
+  or at the end) and `expect.stt_hints` (likely next words for the current question).
+- Self-harm escalations: `call` = 14416, `calls` = [112].
+

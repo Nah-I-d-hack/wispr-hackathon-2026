@@ -1,0 +1,17 @@
+# Round 1 Idea: FINAL (for submission)
+
+**Approved by Kanishk and Ritankar together, 15 Nov 2026.** This is the text to paste into the Idea form. Option A with the phone angle (#52) plus the group-conversation paragraph and tightened claims. **490 words** (form limit 50-500). Paste everything between the lines; the form's own counter should read 496 (it may differ by a word or two).
+
+**Version (c), 15 Nov:** Ritankar asked to combine the two drafts: the 5-step product section and 'voice is the product' lines from #62 (the form's rubric asks for 'step by step' and 'looks most at whether voice is essential'), with this file's group-conversation paragraph folded into step 1. 490 words, 496 if hyphenated words are split. Rubric: `docs/round1/RUBRIC.md` (on #62).
+
+---
+
+**The problem:** Describing what is wrong, in your own words, is where Indian healthcare first fails. Picture a 62-year-old in a district hospital queue. He tells the desk he has "gas" in his chest and is sweating. It goes down as acidity, and he waits three hours. The first gap is language: patients think in Bengali, Bhojpuri or Hinglish; forms and often staff use English or formal Hindi. The second is meaning: Indians describe illness as "gas", "chakkar" or "BP low hai", harmless or serious depending on what comes with them, which a form or rushed clerk misses. In a Mumbai study, misread symptoms were the top reason heart-attack patients reached hospital late. The doctor then gets about two minutes, much of it re-asking basics.
+
+**Who has it, where and how often:** Anyone explaining their body in words a clinic doesn't use: a migrant worker, a farmer, a mother describing her child's fever. It happens at every visit, and at home when a family decides whether to go at all. It is hardest for older people, who speak slowly and often need family to explain; by 2050 one in five Indians will be over 60.
+
+**The voice-first product:** Bolo is a voice agent you talk to like a phone call, before the doctor sees you, at home or in the waiting room. No screen, nothing to type. Step by step: (1) The patient or family says what is wrong, in any language or mix: "maa ko do din se chakkar aa rahe hain". Indian visits are group conversations, so Bolo expects several voices (a daughter correcting the dates, a neighbour who saw the fall), keeps track of who said what, asks the patient directly when only they can answer, and merges it all into one history. (2) It asks one short question at a time; for "chakkar", the one that tells its meanings apart: "Does the room spin, or do you feel you might fall?" (3) If it sounds dangerous, like chest "gas" with sweating at 62, it says get help now (112 at home) and flags the desk. (4) It reads back what it understood, in their language, and they correct it by speaking. (5) Staff get a translated one-screen intake with each speaker's own words beside it, so the doctor's two minutes go to examining, not asking. It never diagnoses or suggests medicine. It runs in a phone browser or desk tablet today; next, a number any basic phone can dial.
+
+**Why voice comes first:** Voice is not a feature added on top; it is the product. These phrases are spoken, not written: no form has a box for "seene mein bhaari lagta hai", and few patients can type Bengali or Hindi on a phone. Take away the voice and nothing is left: the meaning lives in their own words. Almost every older Indian knows how to use a phone, and a call lets the whole family speak.
+
+---

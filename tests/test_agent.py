@@ -127,3 +127,43 @@ def test_durations_and_corrections():
     assert rules.latest_duration("nahi nahi, do din nahi, ek hafte se")[0] == 7
     assert rules.latest_duration("I've had fever for four days now")[0] == 4
     assert rules.age("meri maa ko bukhar hai, she is 70") == 70
+
+
+# ---------------------------------------------------------------- C1 1.1 + K's findings (#44)
+def test_c1_v11_phone_channel_and_outbound_greeting():
+    r = core.turn({"contract": "1.1", "session_id": "p", "turn": 0, "event": "start", "state": None,
+                   "ui_lang_hint": "en", "channel": "phone_out", "context": {"patient_first_name": "Asha"}})
+    assert r["contract"] == "1.1" and "Asha" in r["say"]["text"]
+    assert len(r["expect"]["fillers"]) == 3 and all("text_roman" in f for f in r["expect"]["fillers"])
+    r = core.turn({"contract": "1.1", "session_id": "p", "turn": 1, "event": "utterance", "channel": "phone_out",
+                   "transcript": {"text": "my chest feels heavy and I am sweating", "language": "en"},
+                   "state": r["state"]})
+    assert r["action"] == "escalate" and r["escalation"]["transfer"] is True
+    assert "1 1 2" in r["say"]["text"] and r["expect"]["fillers"] == []
+
+
+def test_c1_v10_client_still_gets_10_and_no_transfer_on_web():
+    r = _say(_start("en"), "I want to end my life", 1, lang="en")
+    assert r["contract"] == "1.0" and r["escalation"]["transfer"] is False
+    assert r["escalation"]["calls"] == [{"number": "112", "label": "Emergency"}]
+
+
+def test_stt_hints_follow_the_question():
+    r = _say(_start(), "khaansi hai", 1)
+    assert r["state"]["_internal"]["pending"] == "q_duration" and "din" in r["expect"]["stt_hints"]
+
+
+def test_k_findings_chaar_is_not_chest_and_bengali_chakkar_gets_its_question():
+    r = _say(_start(), "chaar din se bukhar hai", 1)
+    assert "chest" not in r["state"]["_internal"]["signs"] and r["state"]["chief_complaint"]["value"] == "fever"
+    r = _say(_start("bn"), "amar matha ghorachhe", 1, lang="bn")
+    assert "d_I_chakkar" in r["state"]["_internal"]["asked"]
+    assert r["state"]["chief_complaint"]["value"] == "dizziness"
+
+
+def test_fallback_readback_has_no_english():
+    r = _start()
+    for i, t in enumerate(["pet mein dard hai, teen din se", "45 saal", "nahi", "nahi", "nahi"], 1):
+        r = _say(r, t, i)
+    assert r["action"] == "confirm"
+    assert "days" not in r["say"]["text_roman"] and "45 saal" in r["say"]["text_roman"]
