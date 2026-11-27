@@ -57,8 +57,8 @@ number anyone can dial is the next step (slide 8).
 
 ## Slide 4. Who it's for, and how many
 
-- **Older patients first.** About 13.8 crore Indians were 60 or older in 2021 (10.1%), projected to reach 19.4 crore
-  by 2031 (NSO, Elderly in India 2021) and 1 in 5 Indians by 2050 (India Ageing Report 2023).
+- **Older patients first.** About 14.9 crore Indians were 60 or older in 2022 (10.5%; India Ageing Report 2023),
+  heading for 1 in 5 Indians (34.7 crore) by 2050.
 - **Most of them can't use a form.** Only 39.6% of people over 60 can read (women 24.2%); 56.5% never went to school
   (LASI Wave 1). Speaking needs neither.
 - **Women at home.** Mobile ownership (age 15+) is 83.9% for men but 56.2% for women (NSS Telecom 2025).
@@ -192,7 +192,9 @@ is left as is only so this edit doesn't collide with Kanishk's PR #91 on the lin
 
 1. **Slide 4, 60+ population:** added "13.8 crore in 2021 (10.1%), 19.4 crore by 2031" from NSO's *Elderly in India
    2021* (MoSPI), which quotes the government's Technical Group population projections. It is a 2021 projection, not
-   a 2026 count, so the slide says "in 2021". The Impact draft's "15 crore" (#81) has no source; use 13.8 crore there.
+   a 2026 count, so the slide says "in 2021". *Update [R]: switched to the India Ageing Report 2023 figure, 14.9 crore
+   (149 million, 10.5%) in 2022: newer, and it is the source the Impact answer's "about 15 crore" (#81) already cites,
+   so the two documents agree. NSO's 13.8 crore (2021) stays in RESEARCH.md as a cross-check.*
 2. **Slide 4, yearly OPD visits: cut.** No official national yearly figure found (checked MoHFW Annual Report
    2023-24, MoHFW Achievements 2025, NHP/HMIS search). The Ayushman Arogya Mandir total (494.71 crore visits by Nov
    2025, cumulative) went into the speaker note only, since it is not a yearly OPD count.
