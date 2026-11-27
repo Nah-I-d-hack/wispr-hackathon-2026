@@ -114,10 +114,13 @@ class CallSession:
             await self.send({"type": "state", "state": "stt_error", "detail": type(e).__name__})
             out = {"text": "", "language": self.lang, "engine": "error"}
         text = (out.get("text") or "").strip()
-        await self.send({"type": "heard", "text": text, "engine": out.get("engine"), "stt_ms": out.get("latency_ms")})
+        await self.send({"type": "heard", "text": text, "engine": out.get("engine"), "stt_ms": out.get("latency_ms"),
+                        "confidence": out.get("confidence")})
         lang = out.get("language") if out.get("language") in ("hi", "bn", "en") else self.lang
-        transcript = {"text": text, "language": lang, "mixed_with": [], "language_confidence": None,
-                      "stt_confidence": None, "alternatives": [], "stt_engine": out.get("engine", "unknown"),
+        transcript = {"text": text, "language": lang, "mixed_with": [],
+                      "language_confidence": out.get("language_confidence"),
+                      "stt_confidence": out.get("confidence"), "alternatives": out.get("alternatives") or [],
+                      "stt_engine": out.get("engine", "unknown"),
                       "barge_in": self.barge_in}
         self.barge_in = False
         await self._agent("utterance", transcript, {"duration_ms": out.get("duration_ms"), "truncated": False})

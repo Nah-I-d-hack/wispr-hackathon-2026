@@ -126,7 +126,8 @@ class Sim:
                     self.log("bolo", text=f"[{d.get('action')}] {tts.text_for(d, self.lang)}",
                              escalation=esc.get("level"), transfer=esc.get("transfer"))
                 elif t == "heard":
-                    self.log("heard", text=f"{d.get('text')!r} ({d.get('engine')}, {d.get('stt_ms')} ms)")
+                    self.log("heard", text=f"{d.get('text')!r} ({d.get('engine')}, {d.get('stt_ms')} ms, "
+                                         f"confidence {d.get('confidence')})", confidence=d.get("confidence"))
                 elif t == "metric":
                     self.log("latency", text=f"end of speech -> Bolo's reply sent: {d.get('end_to_voice_ms')} ms")
                 elif t == "filler":

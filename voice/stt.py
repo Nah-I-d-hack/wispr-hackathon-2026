@@ -10,6 +10,7 @@ K2 adds more (Sarvam, Eka Parrotlet, Bhashini) behind the same signature and pic
 """
 from __future__ import annotations
 
+import math
 import os
 import time
 from functools import lru_cache
@@ -65,8 +66,21 @@ def _whisper_stt(pcm: bytes, lang: str, hints: list[str], prompt: str) -> dict:
     segs, info = _whisper().transcribe(audio, language=WHISPER_LANG.get(lang), beam_size=1, vad_filter=False,
                                        initial_prompt=ip, condition_on_previous_text=False, temperature=0.0,
                                        max_new_tokens=min(220, int(secs * 18) + 16))
+    segs = list(segs)
     text = " ".join(s.text.strip() for s in segs).strip()
-    return {"text": text, "language": info.language or lang}
+    return {"text": text, "language": info.language or lang, **_whisper_confidence(segs, info)}
+
+
+def _whisper_confidence(segs, info) -> dict:
+    """C1 stt_confidence: exp of the token-weighted mean log-probability, lowered by the no-speech probability.
+    Whisper gives no n-best list at beam 1, so `alternatives` stays empty."""
+    if not segs:
+        return {"confidence": 0.0, "language_confidence": getattr(info, "language_probability", None)}
+    n = [max(1, len(getattr(s, "tokens", []) or [])) for s in segs]
+    lp = sum(s.avg_logprob * k for s, k in zip(segs, n)) / sum(n)
+    speech = 1.0 - max(s.no_speech_prob for s in segs)
+    return {"confidence": round(max(0.0, min(1.0, math.exp(lp) * speech)), 3),
+            "language_confidence": round(getattr(info, "language_probability", 0.0) or 0.0, 3)}
 
 
 def _wispr_stt(pcm: bytes, lang: str, hints: list[str], prompt: str) -> dict:
