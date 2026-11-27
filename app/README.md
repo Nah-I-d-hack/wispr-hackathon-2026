@@ -34,3 +34,27 @@ AGENT_URL=http://localhost:9000 .venv/bin/uvicorn app.server:app --port 8000   #
 - **Logs:** every turn is logged to `outputs/sessions/<id>.jsonl`, so sessions can be replayed through R's agent (C1 §11).
 
 Speech recognition in Chrome needs `localhost` or HTTPS, plus mic permission.
+
+## Phone calls (`/ws/phone`)
+
+Bolo answers a telephony media stream as well as the browser. `/ws/phone` speaks the **Twilio Media Streams**
+WebSocket protocol (8 kHz mu-law audio, `start`/`media`/`mark`/`stop` events), which Exotel, Plivo, Vonage and Telnyx
+mirror closely. A real number later only needs the provider pointed at this URL (plus a thin adapter if its
+protocol differs). Nothing in the call loop or the agent changes.
+
+- **Speech out** is server-side (`voice/tts.py`): Google Cloud TTS with `GOOGLE_TTS_API_KEY`, otherwise espeak-ng
+  (free, robotic, installed in the Docker image).
+- **Turn-taking**: `voice/phone.py` reports `spoke_start` when it sends audio and `spoke_end` when the provider
+  echoes our mark. On barge-in it sends `clear`.
+- **Agent**: every turn goes out with `channel: phone_in` (C1 1.1), so the agent never refers to a screen.
+  Escalations with `transfer` are recorded for the provider to bridge (logged until a provider is connected).
+
+Try it without a provider. The simulator calls `/ws/phone` at phone quality and plays the caller's turns:
+
+```bash
+docker compose exec bolo python scripts/phone_sim.py --lang hi --say "पेट में गैस बन रही है" --say "दो दिन से"
+docker compose exec bolo python scripts/phone_sim.py --wav my_recording.m4a      # real speech, any format
+```
+
+It prints what Bolo said, what speech-to-text heard, and the latency. It writes `bolo.wav`, `caller.wav` and
+`call.json` to `outputs/phone_sim/`.

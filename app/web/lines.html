@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bolo: line check</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600&family=Noto+Sans+Bengali&family=Noto+Sans+Devanagari&display=swap" rel="stylesheet">
+<style>
+  body { font-family: "Noto Sans", "Noto Sans Devanagari", "Noto Sans Bengali", sans-serif; margin: 0; padding: 16px; background: #f6f5f1; color: #1d1d1b; max-width: 760px; margin-inline: auto; }
+  h1 { font-size: 20px; margin: 8px 0 4px; } p.note { color: #5f5e5a; font-size: 14px; margin: 0 0 16px; }
+  .row { background: #fff; border: 1px solid #e3e1da; border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }
+  .id { font: 12px ui-monospace, monospace; color: #5f5e5a; } .new { color: #0f6e56; font-weight: 600; }
+  .line { display: flex; gap: 8px; align-items: baseline; margin-top: 6px; }
+  .line button { flex: none; border: 1px solid #e3e1da; background: #fff; border-radius: 8px; padding: 2px 8px; cursor: pointer; }
+  .lang { flex: none; width: 22px; font-size: 12px; color: #5f5e5a; } .txt { flex: 1; } .rom { color: #5f5e5a; font-size: 13px; }
+  label { font-size: 14px; } .bad { border-color: #c0392b; }
+  textarea { width: 100%; box-sizing: border-box; margin-top: 6px; display: none; } .bad textarea { display: block; }
+  #out { width: 100%; height: 120px; box-sizing: border-box; font: 12px ui-monospace, monospace; }
+</style>
+</head>
+<body>
+<h1>Line check: how do Bolo's lines sound?</h1>
+<p class="note">▶ reads a line with this browser's Hindi or Bengali voice (the voice the web app uses; phone calls use the server voice). Tick "sounds wrong" and say why. Your notes collect at the bottom; send them to R. Showing the <span class="new">26 lines new in R4</span>; <label><input type="checkbox" id="all"> show all lines</label></p>
+<div id="rows"></div>
+<h1>Notes for R</h1>
+<textarea id="out" readonly></textarea>
+<script>
+const NEW = new Set(["q_duration_retry", "q_age_retry", "unclear_age", "unclear_duration", "unclear_both", "yn_chest", "yn_breath", "yn_bleeding", "yn_unconscious", "yn_duration", "yn_age", "yn_other", "yn_conditions", "yn_medicines", "yn_I_gas", "yn_I_one_side", "yn_I_sudden", "rb_chest", "rb_breath", "rb_over3", "rb_upto3", "rb_over60", "rb_under60", "esc_emergency_transfer", "esc_self_harm_transfer", "yn_I_tension"]);
+const BCP = { hi: "hi-IN", bn: "bn-IN", en: "en-IN" };
+let lines = {};
+function speak(text, lang) {
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text); u.lang = BCP[lang];
+  const v = speechSynthesis.getVoices().find((x) => x.lang.replace("_", "-").startsWith(BCP[lang]));
+  if (v) u.voice = v; u.rate = 0.9; speechSynthesis.speak(u);
+}
+function notes() {
+  document.getElementById("out").value = [...document.querySelectorAll(".row.bad")].map((r) =>
+    `${r.dataset.id}: ${r.querySelector("textarea").value || "(sounds wrong)"}`).join("\n");
+}
+function render() {
+  const all = document.getElementById("all").checked, box = document.getElementById("rows");
+  box.innerHTML = "";
+  for (const [id, v] of Object.entries(lines)) {
+    if (!v || typeof v !== "object" || !(v.hi || v.bn) || (!all && !NEW.has(id))) continue;
+    const row = document.createElement("div"); row.className = "row"; row.dataset.id = id;
+    row.innerHTML = `<div class="id">${id}${NEW.has(id) ? ' <span class="new">new</span>' : ""}</div>`;
+    for (const l of ["hi", "bn", "en"]) {
+      if (!v[l]) continue;
+      const d = document.createElement("div"); d.className = "line";
+      d.innerHTML = `<span class="lang">${l}</span><button>▶</button><span class="txt"></span>`;
+      d.querySelector(".txt").textContent = v[l];
+      if (v[l + "_roman"]) { const r = document.createElement("div"); r.className = "rom"; r.textContent = v[l + "_roman"]; d.querySelector(".txt").append(r); }
+      d.querySelector("button").onclick = () => speak(v[l], l);
+      row.append(d);
+    }
+    const lab = document.createElement("label");
+    lab.innerHTML = '<input type="checkbox"> sounds wrong'; row.append(lab);
+    const ta = document.createElement("textarea"); ta.placeholder = "what's wrong, and a better wording if you have one"; row.append(ta);
+    lab.querySelector("input").onchange = (e) => { row.classList.toggle("bad", e.target.checked); notes(); };
+    ta.oninput = notes;
+    box.append(row);
+  }
+}
+document.getElementById("all").onchange = render;
+fetch("/api/lines").then((r) => r.json()).then((j) => { lines = j; render(); });
+speechSynthesis.getVoices();
+</script>
+</body>
+</html>
