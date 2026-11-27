@@ -66,5 +66,10 @@ patient read-back get simpler.
   ("teen din se", "dui bochhor dhore") never fills the age, even as the answer to "how old?". Everyday words whose
   fuzzy skeleton lands on a sign word ("dhore" ~ diarrhoea, "ghoomta" ~ Bengali "ghamte" = sweating, "chinta" ~
   chest) are never fuzzy-matched (`_NOT_FUZZY` in `rules.py`); tests in `tests/test_agent_numbers.py`.
+- **Spoken correction of "since when"** ("nahi, teen din se" at the read-back, or any "no, ..." turn with a new
+  duration): updates `symptoms[0].duration` and marks it `corrected` (the card), swaps the duration words inside the
+  complaint the card and read-back quote ("maa ko teen din se chakkar..."; native script too), notes "corrected by the
+  caller; first said 2 days" in the clinician summary, and reads back again. It wins over the model's fields; the
+  read-back after a correction is built from the corrected words. The transcript log keeps the verbatim original.
 - `python -m agent.build_lines --changed` converts only new or edited lines and keeps the reviewed ones as they are.
 
