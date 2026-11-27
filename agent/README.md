@@ -56,7 +56,8 @@ patient read-back get simpler.
   (`unclear_*`), and an answer at the read-back fills it and reads back again. Never on a red-flag turn.
 - **Two misheard turns in a row** (empty transcript, or `stt_confidence` < 0.35 with nothing understood): switch to
   yes/no questions (`yn_*`) for the rest of the call. A "yes" adds the matching sign, so red-flag rules treat it like
-  the spoken words. Five misheard turns in a row end politely, keeping what was collected.
+  the spoken words; the tension question keeps its self-harm screen (`yn_I_tension`, yes -> 14416 then 112).
+  Follow-ups without a yes/no form (ghabrahat, BP, sugar, jalan, garmi-thand) are skipped. Five misheard turns in a row end politely, keeping what was collected.
 - **Reply language**: set by the first utterance, then changes only after two turns in a row in another language.
 - **Possibly misheard red-flag word** (a word one letter from "seene", "saans", "khoon", "behosh"..., or a red-flag
   word only in `transcript.alternatives`): asked about directly ("Kya seene mein dard hai?").

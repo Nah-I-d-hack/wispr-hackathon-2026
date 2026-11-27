@@ -394,10 +394,11 @@ def _has(state: dict, field: str) -> bool:
 _YN_OF = {"q_duration": "yn_duration", "q_duration_retry": "yn_duration", "q_age": "yn_age", "q_age_retry": "yn_age",
           "q_other": "yn_other", "q_conditions": "yn_conditions", "q_medicines": "yn_medicines",
           "d_I_gas": "yn_I_gas", "d_I_kamzori": "yn_I_one_side", "d_I_sunn": "yn_I_one_side",
-          "d_I_chakkar": "yn_I_sudden"}
+          "d_I_chakkar": "yn_I_sudden", "d_I_tension": "yn_I_tension"}  # tension keeps its self-harm screen
 # a "yes" adds these signs, so the red-flag rules judge a yes/no answer exactly like the spoken words
 _YN_SIGN = {"yn_chest": "chest", "yn_breath": "breathless", "yn_bleeding": "bleeding", "yn_unconscious": "unconscious",
-            "yn_I_gas": "sweating", "yn_I_one_side": "one_side", "yn_I_sudden": "sudden"}
+            "yn_I_gas": "sweating", "yn_I_one_side": "one_side", "yn_I_sudden": "sudden",
+            "yn_I_tension": "self_harm"}
 _RF_ASK = [("chest", "yn_chest"), ("breathless", "yn_breath"), ("unconscious", "yn_unconscious"),
            ("bleeding", "yn_bleeding")]
 _FIELD_OF = {"q_duration": "duration", "q_duration_retry": "duration", "q_age_self": "age", "q_age_other": "age",

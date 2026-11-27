@@ -175,6 +175,28 @@ def test_yes_no_mode_runs_to_a_readback_of_the_answers():
     assert _say(r, "haan")["action"] == "done"
 
 
+@pytest.mark.parametrize("lang,yes", [("hi", "haan"), ("bn", "hya"), ("en", "yes")])
+def test_yes_no_mode_keeps_the_self_harm_screen(lang, yes):
+    # the tension question was being asked when the line went bad: its yes/no form is the self-harm question
+    r = _say(_start(lang), "bahut tension hai" if lang != "en" else "I have a lot of tension", lang)
+    assert r["state"]["_internal"]["pending"] == "d_I_tension"
+    r = _say(_say(r, "", lang), "", lang)
+    assert r["state"]["_internal"]["pending"] == "yn_I_tension" and r["expect"]["kind"] == "yes_no"
+    assert r["say"]["text"] == core.LINES["yn_I_tension"][lang]
+    r = _say(r, yes, lang)
+    assert r["action"] == "escalate" and any(f["id"] == "E9_self_harm" for f in r["red_flags"])
+    assert r["escalation"]["call"]["number"] == "14416"
+    assert r["escalation"]["calls"] == [{"number": "112", "label": "Emergency"}]
+    assert r["escalation"]["transfer"] is True and "1 4 4 1 6" in r["say"]["text"]
+
+
+def test_tension_mentioned_after_yes_no_mode_started_gets_the_yes_no_self_harm_question():
+    r = _talk(["", "", "nahi, bas tension hai"])
+    assert r["state"]["_internal"]["pending"] == "yn_I_tension"
+    r = _say(r, "nahi")
+    assert r["action"] == "ask" and not any(f["id"] == "E9_self_harm" for f in r["red_flags"])
+
+
 def test_one_misheard_turn_then_a_clear_one_resets_the_count():
     r = _talk(["", "pet mein dard hai", ""])
     assert r["action"] == "repeat" and r["state"]["_internal"]["yn_mode"] is False
