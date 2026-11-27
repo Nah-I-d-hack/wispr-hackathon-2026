@@ -11,9 +11,7 @@ services:
       STT_ENGINE: ${STT_ENGINE:-whisper}     # phone-call screen: whisper (no key) or wispr (needs WISPR_API_KEY)
       WHISPER_MODEL: ${WHISPER_MODEL:-small}
       GOOGLE_TTS_API_KEY: ${GOOGLE_TTS_API_KEY:-}   # phone calls: better Hindi/Bengali voices than espeak-ng
-      HF_HOME: /models
     volumes:
-      - models:/models                       # the speech model is downloaded once, on first start
       - outputs:/bolo/outputs                # session logs and latency metrics
     ports:
       - "8000:8000"
@@ -24,5 +22,4 @@ services:
       retries: 6
 
 volumes:
-  models:
   outputs:
