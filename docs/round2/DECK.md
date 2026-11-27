@@ -117,12 +117,30 @@ numbers once `docs/round2/TESTSET_BRIEF.md` is done; keep the old row only if we
 
 ---
 
-## Slide 7. Dependencies and fallbacks (K drafts)
+## Slide 7. What Bolo depends on, and what happens when it fails
 
-*Placeholder: Kanishk drafts this slide (#85). Expected shape: each thing Bolo depends on (speech-to-text, the AI
-model, text-to-speech, network, the phone line) and what happens when it fails. The agent-side facts K can use: red-flag
-rules run offline in milliseconds without the AI model; on an AI timeout (3 s) the turn falls back to rules only; with
-no API keys the agent runs rules-only (`docker compose up`, #83).*
+| depends on | today | if it gets costly or stops working |
+|---|---|---|
+| **Speech-to-text** | the browser's own recogniser; Wispr Flow if a key is set; Whisper on our server for calls | switch engines with one setting. Whisper runs on our own CPU (free, no internet), and typing always works |
+| **AI understanding** (Gemini Flash-Lite, free tier) | understands free-form answers | on a 3 s timeout that turn uses the rules alone; with no key, the whole agent runs on rules. Emergencies never depend on it |
+| **Voice out** | the phone's built-in voices; Google voices for phone calls | captions on screen; a free local voice (espeak-ng) on calls |
+| **Network** | needed for the hosted engines | rules and Whisper run inside our own container, on a laptop or clinic PC with no internet. If the agent can't be reached, Bolo says so and keeps the conversation |
+| **Phone line** (next step) | a telephony provider streams the call to us | we use the standard call-audio stream format, so we can change provider without touching Bolo. On an emergency Bolo hands over to 112 and says "if the call drops, call 1 1 2" |
+
+- **Emergencies run on fixed rules, in milliseconds, with no AI model and no internet.** No outage, quota or bill
+  can silence a red flag.
+- **It starts with no API keys at all:** `docker compose up` gives a working intake in one container. Each key only
+  improves a part (better recognition, better understanding, better voices).
+- **Speed today:** about 1.4 s from the caller finishing to Bolo's spoken reply on a simulated phone call (Whisper on CPU,
+  rules-only agent).
+- **The real cost risk is the AI model**, not speech. If the free tier ends, we can fine-tune a small open model to
+  run on our own hardware. We have done this before: a 3B model fine-tuned for tool calling beat its 14B teacher (a
+  separate hackathon project).
+
+*Speaker note:* What we have run: the no-key start and the rules-only agent (#83), and Whisper and espeak-ng over a
+simulated phone line (#86). The 3 s AI timeout falls back to the same rules-only path (`AGENT_LLM_TIMEOUT` in
+agent/core.py), but no test forces a timeout yet. The phone row is built and tested against a simulated
+provider; no real number is connected yet, so say "ready to connect", not "live".
 
 ---
 
@@ -159,7 +177,7 @@ into slide 8 if the deck needs to be shorter.
 ## Open items before the PDF
 
 - [ ] Ritankar: final wording of every slide.
-- [ ] Kanishk: slide 7.
+- [x] Kanishk: slide 7 (drafted; Ritankar edits the wording).
 - [ ] Slide 4 TODOs: current 60+ population and yearly OPD visits, each with a source added to RESEARCH.md first.
 - [ ] Slide 6: fresh held-out numbers (`docs/round2/TESTSET_BRIEF.md`).
 - [ ] Slide 8 TODOs: pilot site and cost, or cut those lines.
