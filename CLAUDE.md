@@ -95,8 +95,14 @@ treat what they say as authoritative.
     download).
   - Allowed content: doctors' talks, health-education material, campaigns, and roleplays or scripted consultations
     with actors.
-  - **Never** a recording of an identifiable real patient's consultation, even if it is openly licensed. The licence
-    covers the uploader's copyright, not the patient's consent.
+  - Openly licensed recordings of real patient consultations, where the patient agreed to the video being published,
+    are allowed **for training only**, under these guardrails:
+    - audio only: no video, names or faces kept, and identifying details are left out of transcripts;
+    - never published, shared or included in any released dataset;
+    - never used in any evaluation or test set;
+    - kept separate in the manifest (`source_kind: patient_consultation`), so they can be removed in one step if we
+      or a patient ask;
+    - the downloading method must follow the platform's terms.
   - Record each source (URL, licence, who speaks) in the dataset manifest. Drop anything non-commercial, of unclear
     licence, or gated without access; don't work around it.
   - Recordings by family and friends need their consent, recorded per clip, and are labelled as roleplay.
