@@ -280,6 +280,20 @@ async def _warm() -> None:
         asyncio.get_running_loop().run_in_executor(None, stt_mod.warm_up)
 
 
+@app.get("/lines")
+def lines_page() -> FileResponse:
+    """Listen-check of the agent's spoken lines (K's task for R's new lines)."""
+    return FileResponse(WEB / "lines.html")
+
+
+@app.get("/api/lines")
+def lines_json() -> JSONResponse:
+    try:
+        return JSONResponse(json.loads((ROOT / "agent" / "lines.json").read_text(encoding="utf-8")))
+    except (OSError, ValueError):
+        return JSONResponse({}, status_code=404)
+
+
 @app.get("/call")
 def call_page() -> FileResponse:
     return FileResponse(WEB / "call.html")
