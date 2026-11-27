@@ -89,6 +89,17 @@ treat what they say as authoritative.
 - **Intake, not diagnosis.** Never tell a user what condition they have or what medicine to take. Red flags
   (`docs/SAFETY.md`, R2) produce an escalation message. Always read back what was understood for confirmation.
 - No real patient data. Test utterances are written or recorded by us, labelled as synthetic.
+- **Training audio (speech fine-tuning) may also come from openly licensed recordings:**
+  - Allowed licences: public domain, CC0, CC BY or CC BY-SA. The source must permit downloading it (e.g. Wikimedia
+    Commons, Internet Archive, government open-data portals, dataset hubs, or a CC BY video the platform lets you
+    download).
+  - Allowed content: doctors' talks, health-education material, campaigns, and roleplays or scripted consultations
+    with actors.
+  - **Never** a recording of an identifiable real patient's consultation, even if it is openly licensed. The licence
+    covers the uploader's copyright, not the patient's consent.
+  - Record each source (URL, licence, who speaks) in the dataset manifest. Drop anything non-commercial, of unclear
+    licence, or gated without access; don't work around it.
+  - Recordings by family and friends need their consent, recorded per clip, and are labelled as roleplay.
 - Keys for speech/LLM APIs live in `.env` (gitignored). Prefer free tiers. Say so before anything that costs money.
 
 ## 6. Engineering conventions
