@@ -138,8 +138,8 @@ numbers once `docs/round2/TESTSET_BRIEF.md` is done; keep the old row only if we
   separate hackathon project).
 
 *Speaker note:* What we have run: the no-key start and the rules-only agent (#83), and Whisper and espeak-ng over a
-simulated phone line (#86). The 3 s AI timeout falls back to the same rules-only path (`AGENT_LLM_TIMEOUT` in
-agent/core.py), but no test forces a timeout yet. The phone row is built and tested against a simulated
+simulated phone line (#86). The 3 s AI timeout falls back to the same rules-only path, and a test forces it (#92):
+routine turns continue on the rules, and chest pain with breathlessness still escalates on web and phone. The phone row is built and tested against a simulated
 provider; no real number is connected yet, so say "ready to connect", not "live".
 
 ---
